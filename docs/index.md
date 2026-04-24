@@ -38,6 +38,7 @@ HashiCorp Vault, UFW firewall, SNMP monitoring, and TOTP two-factor authenticati
 | `01_vault.yml` | Deploy and initialize Vault on controller | 2 |
 | `02_discover.yml` | Discover VMs and regenerate `inventory/hosts.yml` | 3 |
 | `03_harden.yml` | Apply hardening roles to discovered linux targets | 4 |
+| `04_centreon.yml` | Register discovered hosts in Centreon through the API | 5 |
 | `site.yml` | Wrapper for main deployment flow (01 + 03) | Alternative when inventory is already prepared |
 
 ---

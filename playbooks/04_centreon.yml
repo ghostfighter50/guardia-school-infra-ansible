@@ -1,0 +1,13 @@
+---
+# Step 4 - Register discovered hosts in Centreon using the REST CLAPI API.
+# Requires hosts.yml to be populated and Centreon API credentials to be available.
+#
+#   export CENTREON_API_PASSWORD='your-password'
+#   ansible-playbook playbooks/04_centreon.yml
+
+- name: Register Linux targets in Centreon
+  hosts: localhost
+  become: false
+  gather_facts: false
+  roles:
+    - role: centreon_register

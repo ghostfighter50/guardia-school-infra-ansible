@@ -10,6 +10,9 @@ Centreon is an enterprise monitoring platform. This project configures targets w
 that Centreon can query. Each target must be registered in Centreon with the correct host
 template so that monitoring services (CPU, memory, disk, network) are applied automatically.
 
+The repository now includes an automation step, `playbooks/04_centreon.yml`, that creates or
+updates hosts in Centreon from the generated Ansible inventory.
+
 ---
 
 ## Prerequisites
@@ -98,6 +101,34 @@ If a poller does not exist yet:
 ---
 
 ## Step 4: Add a Host
+
+If you used the discovery playbook, start from the generated file `inventory/centreon_hosts.csv`.
+It contains one line per discovered host with the expected template, SNMP version, community,
+and poller name.
+
+If you want the repository to create the hosts automatically instead of using the UI:
+
+```bash
+export CENTREON_API_PASSWORD='<password>'
+ansible-playbook playbooks/04_centreon.yml
+```
+
+The automation uses:
+
+| Variable | Purpose |
+|----------|---------|
+| `centreon_base_url` | Centreon base URL, default `http://127.0.0.1/centreon` |
+| `centreon_api_user` | Centreon admin user, default `admin` or `CENTREON_API_USER` |
+| `centreon_api_password` | Centreon admin password, usually from `CENTREON_API_PASSWORD` |
+| `centreon_host_template` | Host template to apply, default `OS-Linux-SNMP-custom` |
+| `centreon_poller_name` | Poller name, default `poller-01` |
+
+What this automation does:
+
+1. logs in to the Centreon API
+2. creates missing hosts from `linux_targets`
+3. sets SNMP version and SNMP community on each host
+4. reapplies the host template so linked services are created
 
 For each target machine:
 

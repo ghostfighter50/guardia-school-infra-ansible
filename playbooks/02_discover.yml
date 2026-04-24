@@ -9,7 +9,7 @@
 #     playbooks/02_discover.yml
 #
 # This playbook does not apply hardening. It only updates inventory/hosts.yml
-# and writes a report to inventory/discovery_report.yml.
+# and writes reports to inventory/discovery_report.yml and inventory/centreon_hosts.csv.
 
 - name: Discover VMs and build inventory
   hosts: localhost
@@ -18,6 +18,7 @@
   vars:
     inventory_path: "{{ playbook_dir }}/../inventory/hosts.yml"
     discovery_report_path: "{{ playbook_dir }}/../inventory/discovery_report.yml"
+    centreon_export_path: "{{ playbook_dir }}/../inventory/centreon_hosts.csv"
     scan_subnet: "10.1.91.100-200"
 
   tasks:
@@ -86,6 +87,16 @@
         content: "{{ report | to_nice_yaml(indent=2) }}"
         mode: '0644'
 
+    - name: Write Centreon import CSV
+      ansible.builtin.copy:
+        dest: "{{ centreon_export_path }}"
+        content: |
+          host_name;alias;ip_address;host_template;snmp_version;snmp_community;poller
+          {% for item in (generated_hosts | default({}) | dict2items) %}
+          {{ item.key }};{{ item.key }};{{ item.value.ansible_host }};{{ centreon_host_template | default('OS-Linux-SNMP-custom') }};2c;{{ snmp_community | default('public_ro') }};{{ centreon_poller_name | default('poller-01') }}
+          {% endfor %}
+        mode: '0644'
+
     - name: Show report path
       ansible.builtin.debug:
         msg: "Detailed report: {{ discovery_report_path }}"
@@ -93,4 +104,8 @@
     - name: Show updated inventory path
       ansible.builtin.debug:
         msg: "Updated inventory: {{ inventory_path }}"
+
+    - name: Show Centreon import path
+      ansible.builtin.debug:
+        msg: "Centreon import CSV: {{ centreon_export_path }}"
 

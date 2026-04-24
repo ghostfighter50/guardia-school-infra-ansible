@@ -1,0 +1,123 @@
+---
+- name: Ensure Centreon API password is provided
+  ansible.builtin.assert:
+    that:
+      - centreon_api_password | length > 0
+    fail_msg: "Set CENTREON_API_PASSWORD or centreon_api_password before running 04_centreon.yml"
+
+- name: Build Centreon host payloads from inventory
+  ansible.builtin.set_fact:
+    centreon_inventory_hosts: "{{ centreon_inventory_hosts | default([]) + [ {'name': item, 'alias': item, 'address': (hostvars[item].ansible_host | default(item)) } ] }}"
+  loop: "{{ groups['linux_targets'] | default([]) }}"
+
+- name: Authenticate to Centreon API
+  ansible.builtin.uri:
+    url: "{{ centreon_base_url }}/api/index.php?action=authenticate"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      username: "{{ centreon_api_user }}"
+      password: "{{ centreon_api_password }}"
+    validate_certs: "{{ centreon_api_verify_tls }}"
+    return_content: true
+  register: centreon_auth
+  no_log: true
+
+- name: Cache Centreon auth token
+  ansible.builtin.set_fact:
+    centreon_auth_token: "{{ centreon_auth.json.authToken }}"
+  no_log: true
+
+- name: List existing Centreon hosts
+  ansible.builtin.uri:
+    url: "{{ centreon_base_url }}/api/index.php?action=action&object=centreon_clapi"
+    method: POST
+    headers:
+      Content-Type: application/json
+      centreon-auth-token: "{{ centreon_auth_token }}"
+    body_format: json
+    body:
+      action: show
+      object: host
+    validate_certs: "{{ centreon_api_verify_tls }}"
+    return_content: true
+  register: centreon_existing_hosts_raw
+
+- name: Extract existing Centreon host names
+  ansible.builtin.set_fact:
+    centreon_existing_host_names: "{{ centreon_existing_hosts_raw.json.result | default([]) | map(attribute='name') | list }}"
+
+- name: Add missing hosts to Centreon
+  ansible.builtin.uri:
+    url: "{{ centreon_base_url }}/api/index.php?action=action&object=centreon_clapi"
+    method: POST
+    headers:
+      Content-Type: application/json
+      centreon-auth-token: "{{ centreon_auth_token }}"
+    body_format: json
+    body:
+      action: add
+      object: host
+      values: "{{ item.name }};{{ item.alias }};{{ item.address }};{{ centreon_host_template }};{{ centreon_poller_name }};"
+    validate_certs: "{{ centreon_api_verify_tls }}"
+    status_code: [200, 409]
+  loop: "{{ centreon_inventory_hosts | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: item.name not in centreon_existing_host_names
+
+- name: Set SNMP version on Centreon hosts
+  ansible.builtin.uri:
+    url: "{{ centreon_base_url }}/api/index.php?action=action&object=centreon_clapi"
+    method: POST
+    headers:
+      Content-Type: application/json
+      centreon-auth-token: "{{ centreon_auth_token }}"
+    body_format: json
+    body:
+      action: setparam
+      object: host
+      values: "{{ item.name }};snmp_version;{{ centreon_snmp_version }}"
+    validate_certs: "{{ centreon_api_verify_tls }}"
+  loop: "{{ centreon_inventory_hosts | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Set SNMP community on Centreon hosts
+  ansible.builtin.uri:
+    url: "{{ centreon_base_url }}/api/index.php?action=action&object=centreon_clapi"
+    method: POST
+    headers:
+      Content-Type: application/json
+      centreon-auth-token: "{{ centreon_auth_token }}"
+    body_format: json
+    body:
+      action: setparam
+      object: host
+      values: "{{ item.name }};snmp_community;{{ snmp_community }}"
+    validate_certs: "{{ centreon_api_verify_tls }}"
+  loop: "{{ centreon_inventory_hosts | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Re-apply host template so Centreon creates linked services
+  ansible.builtin.uri:
+    url: "{{ centreon_base_url }}/api/index.php?action=action&object=centreon_clapi"
+    method: POST
+    headers:
+      Content-Type: application/json
+      centreon-auth-token: "{{ centreon_auth_token }}"
+    body_format: json
+    body:
+      action: applytpl
+      object: host
+      values: "{{ item.name }}"
+    validate_certs: "{{ centreon_api_verify_tls }}"
+  loop: "{{ centreon_inventory_hosts | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: centreon_auto_apply_template | bool
+
+- name: Show registered Centreon hosts
+  ansible.builtin.debug:
+    msg: "Centreon hosts processed: {{ centreon_inventory_hosts | map(attribute='name') | join(', ') if centreon_inventory_hosts else '(none)' }}"

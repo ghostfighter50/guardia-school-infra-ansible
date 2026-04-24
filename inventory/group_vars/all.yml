@@ -22,6 +22,10 @@ snmp_location: "Lab"
 snmp_contact: "admin@example.local"
 snmp_allowed_source: "10.1.91.110"
 
+# Centreon integration defaults
+centreon_host_template: "OS-Linux-SNMP-custom"
+centreon_poller_name: "poller-01"
+
 # HashiCorp Vault
 vault_addr: "{{ lookup('env', 'VAULT_ADDR') | default('http://127.0.0.1:8200', true) }}"
 

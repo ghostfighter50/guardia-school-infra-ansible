@@ -14,8 +14,15 @@ ansible-playbook playbooks/00_service_account.yml -k -K
 # 2. Deploy Vault (prompts for sudo password on controller)
 ansible-playbook playbooks/01_vault.yml -K
 
-# 3. Harden all targets
+# 3. Discover targets
+ansible-playbook -i inventory/hosts.yml -i inventory/nmap_discovery.yml playbooks/02_discover.yml
+
+# 4. Harden all targets
 ansible-playbook playbooks/03_harden.yml
+
+# 5. Register targets in Centreon
+export CENTREON_API_PASSWORD='<password>'
+ansible-playbook playbooks/04_centreon.yml
 ```
 
 Or run everything in one command:
@@ -65,6 +72,9 @@ ansible-playbook playbooks/site.yml -K
 
 03_harden.yml            Controller -> discovered targets (SSH key)
                          common -> ssh_hardening -> ufw_firewall -> snmp_agent -> managed_user
+
+04_centreon.yml          Controller -> Centreon API
+                         Registers discovered hosts with SNMP settings and applies the Linux SNMP template
 ```
 
 ### Roles
@@ -109,9 +119,17 @@ ansible-playbook \
 
 # 3) Review generated inventory entries
 cat inventory/hosts.yml
+
+# 4) Review generated Centreon import file
+cat inventory/centreon_hosts.csv
+
+# 5) Register discovered hosts in Centreon automatically
+export CENTREON_API_PASSWORD='<password>'
+ansible-playbook playbooks/04_centreon.yml
 ```
 
 New entries are created under `linux_targets` with names like `auto_10_1_90_25`.
+The same discovery run also generates `inventory/centreon_hosts.csv` for Centreon host import.
 
 ### Key variables (`inventory/group_vars/all.yml`)
 
@@ -120,6 +138,8 @@ New entries are created under `linux_targets` with names like `auto_10_1_90_25`.
 | `ssh_port` | 2222 | SSH port after hardening |
 | `snmp_community` | public_ro | SNMPv2c community string |
 | `snmp_allowed_source` | 127.0.0.1 | Monitoring server IP for SNMP |
+| `centreon_host_template` | OS-Linux-SNMP-custom | Host template applied in Centreon |
+| `centreon_poller_name` | poller-01 | Poller instance name in Centreon |
 | `vault_addr` | http://127.0.0.1:8200 | Vault API address |
 
 Change `snmp_allowed_source` to your monitoring server IP before first deployment.
@@ -201,9 +221,11 @@ guardia-school-ansible/
 │   ├── 01_vault.yml                # Deploy Vault
 │   ├── 02_discover.yml             # Discover VMs and regenerate inventory/hosts.yml
 │   ├── 03_harden.yml               # Harden all discovered targets
+│   ├── 04_centreon.yml             # Register discovered hosts in Centreon
 │   └── site.yml                    # Main deployment wrapper (01 + 03)
 │
 ├── roles/
+│   ├── centreon_register/          # Centreon API host registration
 │   ├── service_account/            # Service account bootstrap
 │   ├── common/                     # Base packages and fail2ban
 │   ├── ssh_hardening/              # SSH daemon hardening and PAM TOTP

@@ -1,0 +1,7 @@
+---
+centreon_base_url: "http://127.0.0.1/centreon"
+centreon_api_user: "{{ lookup('env', 'CENTREON_API_USER') | default('admin', true) }}"
+centreon_api_password: "{{ lookup('env', 'CENTREON_API_PASSWORD') | default('', true) }}"
+centreon_api_verify_tls: false
+centreon_snmp_version: "2c"
+centreon_auto_apply_template: true

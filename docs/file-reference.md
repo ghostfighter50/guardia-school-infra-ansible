@@ -54,6 +54,8 @@ Key variables:
 | `ssh_port` | 2222 | SSH port used after hardening |
 | `snmp_community` | public_ro | SNMPv2c community string |
 | `snmp_allowed_source` | 127.0.0.1 | IP allowed to query SNMP |
+| `centreon_host_template` | OS-Linux-SNMP-custom | Centreon host template used for automatic registration |
+| `centreon_poller_name` | poller-01 | Centreon poller name assigned to discovered hosts |
 | `vault_addr` | http://127.0.0.1:8200 | Vault API address |
 
 ---
@@ -66,6 +68,7 @@ Key variables:
 | `01_vault.yml` | Deploy and initialize HashiCorp Vault on controller |
 | `02_discover.yml` | Discover Linux VMs from nmap inventory and regenerate inventory/hosts.yml |
 | `03_harden.yml` | Full hardening of all linux_targets |
+| `04_centreon.yml` | Register discovered hosts in Centreon using the REST CLAPI API |
 | `site.yml` | Full orchestration wrapper: runs 01_vault then 03_harden |
 
 ---
@@ -79,6 +82,15 @@ Creates the `ansible` system user used for all subsequent connections.
 | File | Purpose |
 |------|---------|
 | `tasks/main.yml` | Creates user, .ssh directory, authorized_keys, sudoers entry |
+
+### centreon_register
+
+Registers discovered Linux hosts in Centreon using the documented REST CLAPI API.
+
+| File | Purpose |
+|------|---------|
+| `tasks/main.yml` | Authenticate to Centreon, add missing hosts, set SNMP settings, apply template |
+| `defaults/main.yml` | Centreon API URL, API auth source, template and poller defaults |
 
 ### vault_server
 
