@@ -3,6 +3,18 @@
 # Idempotent: skips password and TOTP generation if credentials already exist in Vault.
 # Packages (libpam-google-authenticator, qrencode) are installed by the common role.
 
+- name: Resolve Vault token for localhost API calls
+  delegate_to: localhost
+  become: false
+  ansible.builtin.set_fact:
+    vault_api_token: >-
+      {{
+        lookup('ansible.builtin.env', 'VAULT_TOKEN')
+        | default(lookup('ansible.builtin.file', '/home/' ~ admin_user ~ '/.vault-token', errors='ignore'), true)
+        | default(lookup('ansible.builtin.file', '/root/.vault-token', errors='ignore'), true)
+      }}
+  no_log: true
+
 # Password management
 - name: Look up existing password from Vault
   delegate_to: localhost
@@ -11,10 +23,11 @@
     url: "{{ vault_addr }}/v1/secret/data/hosts/{{ inventory_hostname }}/user"
     method: GET
     headers:
-      X-Vault-Token: "{{ lookup('file', '~/.vault-token') }}"
+      X-Vault-Token: "{{ vault_api_token }}"
     status_code: [200, 404]
     return_content: true
   register: vault_user_lookup
+  when: vault_api_token | length > 0
   no_log: true
 
 - name: Generate random password (user not yet in Vault)
@@ -23,14 +36,14 @@
       {{ lookup('password', '/dev/null length=' ~ managed_user_password_length
          ~ ' chars=ascii_letters,digits') }}
     managed_user_is_new: true
-  when: vault_user_lookup.status == 404
+  when: (vault_api_token | length == 0) or (vault_user_lookup.status | default(404) == 404)
   no_log: true
 
 - name: Use existing password from Vault
   ansible.builtin.set_fact:
     managed_user_password: "{{ vault_user_lookup.json.data.data.password }}"
     managed_user_is_new: false
-  when: vault_user_lookup.status == 200
+  when: (vault_api_token | length > 0) and (vault_user_lookup.status | default(0) == 200)
   no_log: true
 
 # User account
@@ -59,7 +72,7 @@
     url: "{{ vault_addr }}/v1/secret/data/hosts/{{ inventory_hostname }}/user"
     method: POST
     headers:
-      X-Vault-Token: "{{ lookup('file', '~/.vault-token') }}"
+      X-Vault-Token: "{{ vault_api_token }}"
     body_format: json
     body:
       data:
@@ -67,7 +80,9 @@
         password: "{{ managed_user_password }}"
         created_at: "{{ ansible_date_time.iso8601 }}"
     status_code: [200, 204]
-  when: managed_user_is_new | bool
+  when:
+    - managed_user_is_new | bool
+    - vault_api_token | length > 0
   no_log: true
 
 # TOTP 2FA────
@@ -109,12 +124,20 @@
     url: "{{ vault_addr }}/v1/secret/data/hosts/{{ inventory_hostname }}/2fa"
     method: POST
     headers:
-      X-Vault-Token: "{{ lookup('file', '~/.vault-token') }}"
+      X-Vault-Token: "{{ vault_api_token }}"
     body_format: json
     body:
       data:
         totp_secret: "{{ managed_user_totp_secret }}"
         scratch_codes: "{{ managed_user_scratch_codes }}"
     status_code: [200, 204]
-  when: not managed_user_ga_file.stat.exists
+  when:
+    - not managed_user_ga_file.stat.exists
+    - vault_api_token | length > 0
   no_log: true
+
+- name: Warn when Vault token is missing for managed_user secret storage
+  ansible.builtin.debug:
+    msg: "Skipping Vault writes for {{ inventory_hostname }} managed user secrets (no VAULT_TOKEN and no readable token file)."
+  when:
+    - vault_api_token | length == 0

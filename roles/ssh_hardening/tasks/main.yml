@@ -68,6 +68,18 @@
          | select('match', '^[0-9]{8}$') | list }}
   no_log: true
 
+- name: Resolve Vault token for localhost API calls
+  delegate_to: localhost
+  become: false
+  ansible.builtin.set_fact:
+    vault_api_token: >-
+      {{
+        lookup('ansible.builtin.env', 'VAULT_TOKEN')
+        | default(lookup('ansible.builtin.file', '/home/' ~ admin_user ~ '/.vault-token', errors='ignore'), true)
+        | default(lookup('ansible.builtin.file', '/root/.vault-token', errors='ignore'), true)
+      }}
+  no_log: true
+
 - name: Store admin TOTP secret in Vault
   delegate_to: localhost
   become: false
@@ -75,7 +87,7 @@
     url: "{{ vault_addr }}/v1/secret/data/hosts/{{ inventory_hostname }}/admin_2fa"
     method: POST
     headers:
-      X-Vault-Token: "{{ lookup('file', '~/.vault-token') }}"
+      X-Vault-Token: "{{ vault_api_token }}"
     body_format: json
     body:
       data:
@@ -83,5 +95,14 @@
         totp_secret: "{{ admin_totp_secret }}"
         scratch_codes: "{{ admin_scratch_codes }}"
     status_code: [200, 204]
-  when: not admin_ga_file.stat.exists
+  when:
+    - not admin_ga_file.stat.exists
+    - vault_api_token | length > 0
   no_log: true
+
+- name: Warn when Vault token is missing for admin 2FA storage
+  ansible.builtin.debug:
+    msg: "Skipping Vault write for {{ inventory_hostname }} admin 2FA secret (no VAULT_TOKEN and no readable token file)."
+  when:
+    - not admin_ga_file.stat.exists
+    - vault_api_token | length == 0
