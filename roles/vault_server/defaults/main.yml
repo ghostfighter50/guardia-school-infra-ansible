@@ -2,8 +2,8 @@
 vault_listen_address: "0.0.0.0"
 vault_listen_port: 8200
 vault_cluster_port: 8201
-vault_api_addr: "http://{{ ansible_default_ipv4.address | default('127.0.0.1') }}:{{ vault_listen_port }}"
-vault_cluster_addr: "http://{{ ansible_default_ipv4.address | default('127.0.0.1') }}:{{ vault_cluster_port }}"
+vault_api_addr: "http://{{ ansible_facts.get('default_ipv4', {}).get('address', '127.0.0.1') }}:{{ vault_listen_port }}"
+vault_cluster_addr: "http://{{ ansible_facts.get('default_ipv4', {}).get('address', '127.0.0.1') }}:{{ vault_cluster_port }}"
 vault_data_path: "/opt/vault/data"
 vault_config_path: "/etc/vault.d"
 
