@@ -3,7 +3,7 @@
 # Applies: base packages, SSH hardening + PAM TOTP, firewall, SNMP, managed user.
 # Requires Vault to be running and unsealed (run 01_vault.yml first).
 #
-#   ansible-playbook playbooks/03_harden.yml
+#   ansible-playbook playbooks/03_harden.yml -k -K
 
 - name: Harden Linux targets
   hosts: linux_targets
