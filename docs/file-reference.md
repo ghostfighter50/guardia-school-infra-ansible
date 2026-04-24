@@ -17,8 +17,9 @@ what to edit when making configuration changes.
 |------|---------|
 | `ansible.cfg` | Global Ansible settings: inventory path, SSH options, privilege escalation, roles path |
 | `requirements.yml` | Ansible Galaxy collection dependencies |
-| `bootstrap.sh` | Shell helper to run the bootstrap playbook |
+| `bootstrap.sh` | Controller bootstrap helper: generate SSH key, install collections, print execution order |
 | `README.md` | Project overview and quick start |
+| `report.tex` | Final LaTeX technical report for the current repository state |
 
 ### ansible.cfg
 
@@ -40,7 +41,7 @@ Key settings:
 |------|---------|
 | `inventory/hosts.yml` | Static inventory: defines all managed hosts and groups |
 | `inventory/group_vars/all.yml` | Variables applied to every host |
-| `inventory/host_vars/` | Per-host variable overrides |
+| `inventory/nmap_discovery.yml` | Optional helper inventory for discovery experiments |
 
 ### inventory/group_vars/all.yml
 
@@ -61,10 +62,11 @@ Key variables:
 
 | File | Purpose |
 |------|---------|
-| `00_service_account.yml` | Bootstrap service account on targets (run once with -k) |
+| `00_service_account.yml` | Bootstrap service account on targets (run once with -k -K) |
 | `01_vault.yml` | Deploy and initialize HashiCorp Vault on controller |
-| `02_harden.yml` | Full hardening of all linux_targets |
-| `site.yml` | Full orchestration: runs 01_vault then 02_harden |
+| `02_discover.yml` | Discover Linux VMs from nmap inventory and regenerate inventory/hosts.yml |
+| `03_harden.yml` | Full hardening of all linux_targets |
+| `site.yml` | Full orchestration wrapper: runs 01_vault then 03_harden |
 
 ---
 
@@ -173,14 +175,6 @@ Key defaults:
 
 ---
 
-## vault/
-
-| File | Purpose |
-|------|---------|
-| `vault/secrets.yml` | Ansible Vault-encrypted file for sensitive bootstrap values |
-
----
-
 ## docs/
 
 | File | Purpose |
@@ -195,6 +189,7 @@ Key defaults:
 | `setup-firewall.md` | UFW firewall tutorial |
 | `setup-snmp.md` | SNMP agent tutorial |
 | `setup-centreon.md` | Centreon integration tutorial |
+| `setup-opnsense.md` | OPNsense integration tutorial |
 | `troubleshooting.md` | Problem diagnosis reference |
 | `validation.md` | Deployment validation checklist |
 

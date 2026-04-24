@@ -29,7 +29,7 @@ ansible linux_targets -m ping -vvv
 
 ### Connection refused on port 2222
 
-**Symptom**: `ssh: connect to host 10.1.91.x port 2222: Connection refused`
+**Symptom**: `ssh: connect to host <target-ip> port 2222: Connection refused`
 
 **Diagnosis**:
 ```bash
@@ -49,7 +49,7 @@ ssh admin@<target-ip> 'sudo sshd -t'
 **Resolution**:
 ```bash
 # Re-run SSH hardening
-ansible-playbook playbooks/02_harden.yml --tags ssh
+ansible-playbook playbooks/03_harden.yml --tags ssh
 
 # Or manually start sshd on target
 ssh admin@<target-ip> 'sudo systemctl start sshd'
@@ -79,7 +79,7 @@ ssh admin@<target-ip> 'sudo stat /home/ansible/.ssh /home/ansible/.ssh/authorize
 **Resolution**:
 ```bash
 # Re-run service account bootstrap
-ansible-playbook playbooks/00_service_account.yml -k
+ansible-playbook playbooks/00_service_account.yml -k -K
 
 # Or fix permissions manually
 ssh admin@<target-ip> 'sudo chmod 700 /home/ansible/.ssh && sudo chmod 600 /home/ansible/.ssh/authorized_keys'
@@ -112,7 +112,7 @@ ssh -p 2222 admin@<target-ip> 'sudo grep pam_google_authenticator /etc/pam.d/ssh
 ansible linux_targets -m command -a "systemctl restart systemd-timesyncd" -b
 
 # If TOTP secret is missing or corrupt, regenerate
-ansible-playbook playbooks/02_harden.yml --tags ssh --limit <hostname>
+ansible-playbook playbooks/03_harden.yml --tags ssh --limit <hostname>
 # Note: this generates a NEW secret - re-enroll in your authenticator app
 ```
 
@@ -181,9 +181,9 @@ vault kv list secret/hosts/<hostname>/
 ```bash
 # Re-run the role that seeds this secret
 # For admin 2FA:
-ansible-playbook playbooks/02_harden.yml --tags ssh --limit <hostname>
+ansible-playbook playbooks/03_harden.yml --tags ssh --limit <hostname>
 # For managed user:
-ansible-playbook playbooks/02_harden.yml --tags users --limit <hostname>
+ansible-playbook playbooks/03_harden.yml --tags users --limit <hostname>
 ```
 
 ---
@@ -192,7 +192,7 @@ ansible-playbook playbooks/02_harden.yml --tags users --limit <hostname>
 
 ### Connection times out (not refused)
 
-**Symptom**: `ssh: connect to host 10.1.91.x port 2222: Operation timed out`
+**Symptom**: `ssh: connect to host <target-ip> port 2222: Operation timed out`
 
 **Diagnosis**:
 ```bash
@@ -206,7 +206,7 @@ ssh admin@<target-ip> 'sudo ufw status | grep 2222'
 **Resolution**:
 ```bash
 # Re-apply firewall rules
-ansible-playbook playbooks/02_harden.yml --tags firewall
+ansible-playbook playbooks/03_harden.yml --tags firewall
 
 # Or manually allow SSH (as a temporary measure)
 ssh admin@<target-ip> 'sudo ufw allow 2222/tcp && sudo ufw enable'
@@ -235,7 +235,7 @@ ssh admin@<target-ip> 'sudo ufw status | grep 161'
 **Resolution**:
 ```bash
 # Re-run SNMP role
-ansible-playbook playbooks/02_harden.yml --tags snmp
+ansible-playbook playbooks/03_harden.yml --tags snmp
 
 # Check community string matches what you are querying with
 grep snmp_community inventory/group_vars/all.yml
@@ -261,7 +261,7 @@ snmpget -v2c -c public_ro <target-ip> sysDescr.0
 
 # Update snmp_allowed_source if poller IP changed
 vim inventory/group_vars/all.yml
-ansible-playbook playbooks/02_harden.yml --tags snmp
+ansible-playbook playbooks/03_harden.yml --tags snmp
 ```
 
 ---

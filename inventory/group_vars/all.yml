@@ -2,8 +2,8 @@
 # Users
 
 # Service account used by Ansible (SSH key only, exempt from 2FA)
-ansible_service_user: ansible
-ansible_service_user_home: /home/ansible
+ansible_service_user: admin-isr
+ansible_service_user_home: /home/admin-isr/ansible_projet
 
 # Human admin account (password + 2FA TOTP)
 admin_user: admin
@@ -20,7 +20,7 @@ ssh_client_alive_count_max: 2
 snmp_community: "public_ro"
 snmp_location: "Lab"
 snmp_contact: "admin@example.local"
-snmp_allowed_source: "127.0.0.1"
+snmp_allowed_source: "10.1.91.110"
 
 # HashiCorp Vault
 vault_addr: "{{ lookup('env', 'VAULT_ADDR') | default('http://127.0.0.1:8200', true) }}"

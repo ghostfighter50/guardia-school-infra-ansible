@@ -49,7 +49,7 @@ It must be set to the IP address of the monitoring server (Centreon poller or ot
 Edit `inventory/group_vars/all.yml` and set the monitoring source IP:
 
 ```yaml
-snmp_allowed_source: "10.1.91.10"   # Replace with your monitoring server IP
+snmp_allowed_source: "<poller-ip>"   # Replace with your monitoring server IP
 ```
 
 ---
@@ -58,10 +58,10 @@ snmp_allowed_source: "10.1.91.10"   # Replace with your monitoring server IP
 
 ```bash
 # Full hardening stack (includes firewall)
-ansible-playbook playbooks/02_harden.yml
+ansible-playbook playbooks/03_harden.yml
 
 # Firewall role only
-ansible-playbook playbooks/02_harden.yml --tags firewall
+ansible-playbook playbooks/03_harden.yml --tags firewall
 ```
 
 What the role does:
@@ -91,7 +91,7 @@ Default: deny (incoming), allow (outgoing), deny (routed)
 To                         Action      From
 --                         ------      ----
 2222/tcp                   ALLOW IN    Anywhere
-161/udp                    ALLOW IN    10.1.91.10
+161/udp                    ALLOW IN    <poller-ip>
 ```
 
 ---

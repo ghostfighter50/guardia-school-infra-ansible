@@ -110,7 +110,7 @@ Create the `ansible` service account on each target machine with SSH key-based a
 ### Requirements
 
 - SSH password access to target (use `-k` flag)
-- Admin/sudo access on target
+- Admin/sudo access on target (use `-K` for the bootstrap playbook)
 
 ### Commands
 
@@ -122,18 +122,21 @@ vim inventory/hosts.yml
 #
 # all:
 #   children:
+#     firewall:
+#       hosts:
+#         opnsense:
+#           ansible_host: 10.1.90.1
 #     linux_targets:
 #       hosts:
-#         linux-target-01:
-#           ansible_host: 10.1.91.102
-#         linux-target-02:
-#           ansible_host: 10.1.91.103
+#         linux-test:
+#           ansible_host: 10.1.90.10
 
-# Run bootstrap playbook (prompts for password)
-ansible-playbook playbooks/00_service_account.yml -k
+# Run bootstrap playbook (prompts for SSH password and sudo password)
+ansible-playbook playbooks/00_service_account.yml -k -K
 
 # You'll be prompted:
 # SSH password: <enter admin password>
+# BECOME password: <enter sudo password>
 ```
 
 ### What Happens
@@ -255,14 +258,14 @@ Apply all security hardening to target machines: SSH hardening, firewall, SNMP, 
 
 ```bash
 # Run full hardening playbook
-ansible-playbook playbooks/02_harden.yml
+ansible-playbook playbooks/03_harden.yml
 
 # Or run specific roles with tags
-ansible-playbook playbooks/02_harden.yml --tags common
-ansible-playbook playbooks/02_harden.yml --tags ssh
-ansible-playbook playbooks/02_harden.yml --tags firewall
-ansible-playbook playbooks/02_harden.yml --tags snmp
-ansible-playbook playbooks/02_harden.yml --tags users
+ansible-playbook playbooks/03_harden.yml --tags common
+ansible-playbook playbooks/03_harden.yml --tags ssh
+ansible-playbook playbooks/03_harden.yml --tags firewall
+ansible-playbook playbooks/03_harden.yml --tags snmp
+ansible-playbook playbooks/03_harden.yml --tags users
 ```
 
 ### What Happens (in order)
@@ -444,11 +447,11 @@ ssh -i ~/.ssh/ansible_id_ed25519 -p 2222 deploy@<target-ip>
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
-| SSH connection refused | sshd not reloaded | Re-run ssh hardening role: `ansible-playbook playbooks/02_harden.yml --tags ssh` |
+| SSH connection refused | sshd not reloaded | Re-run ssh hardening role: `ansible-playbook playbooks/03_harden.yml --tags ssh` |
 | Vault unreachable | Vault not started | Check: `systemctl status vault` on controller |
 | SNMP no response | SNMP not running or blocked | Check: `systemctl status snmpd` and `ufw status` |
-| 2FA prompt not appearing | PAM not configured | Re-run ssh hardening: `ansible-playbook playbooks/02_harden.yml --tags ssh` |
-| Managed user login fails | Password not in Vault | Re-run managed_user role: `ansible-playbook playbooks/02_harden.yml --tags users` |
+| 2FA prompt not appearing | PAM not configured | Re-run ssh hardening: `ansible-playbook playbooks/03_harden.yml --tags ssh` |
+| Managed user login fails | Password not in Vault | Re-run managed_user role: `ansible-playbook playbooks/03_harden.yml --tags users` |
 
 ---
 
@@ -458,13 +461,13 @@ ssh -i ~/.ssh/ansible_id_ed25519 -p 2222 deploy@<target-ip>
 
 ```bash
 # Run playbook with verbose output
-ansible-playbook playbooks/02_harden.yml -vvv
+ansible-playbook playbooks/03_harden.yml -vvv
 
 # Run playbook with specific target
-ansible-playbook playbooks/02_harden.yml -l linux-target-01
+ansible-playbook playbooks/03_harden.yml -l linux-target-01
 
 # Dry-run (check what would be done)
-ansible-playbook playbooks/02_harden.yml --check
+ansible-playbook playbooks/03_harden.yml --check
 
 # Check connectivity to target
 ansible linux_targets -m ansible.builtin.ping

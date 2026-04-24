@@ -114,7 +114,7 @@ vault kv get -field=scratch_codes secret/hosts/<hostname>/admin_2fa
 Each code can only be used once. After use, regenerate TOTP by re-running:
 
 ```bash
-ansible-playbook playbooks/02_harden.yml --tags ssh --limit <hostname>
+ansible-playbook playbooks/03_harden.yml --tags ssh --limit <hostname>
 ```
 
 Note: This generates a new TOTP secret. The old one becomes invalid.

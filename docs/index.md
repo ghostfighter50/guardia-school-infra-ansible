@@ -24,8 +24,21 @@ HashiCorp Vault, UFW firewall, SNMP monitoring, and TOTP two-factor authenticati
 | [setup-firewall.md](setup-firewall.md) | Tutorial | UFW firewall rules and configuration |
 | [setup-snmp.md](setup-snmp.md) | Tutorial | SNMP agent setup and monitoring integration |
 | [setup-centreon.md](setup-centreon.md) | Tutorial | Centreon monitoring platform integration |
+| [setup-opnsense.md](setup-opnsense.md) | Tutorial | OPNsense gateway and network integration |
 | [troubleshooting.md](troubleshooting.md) | Reference | Problem diagnosis and solutions |
 | [validation.md](validation.md) | Checklist | Deployment validation and acceptance criteria |
+
+---
+
+## Playbook Sequence
+
+| Playbook | Purpose | Typical run order |
+|----------|---------|-------------------|
+| `00_service_account.yml` | Bootstrap service account on fresh targets | 1 |
+| `01_vault.yml` | Deploy and initialize Vault on controller | 2 |
+| `02_discover.yml` | Discover VMs and regenerate `inventory/hosts.yml` | 3 |
+| `03_harden.yml` | Apply hardening roles to discovered linux targets | 4 |
+| `site.yml` | Wrapper for main deployment flow (01 + 03) | Alternative when inventory is already prepared |
 
 ---
 

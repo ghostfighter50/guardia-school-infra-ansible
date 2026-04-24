@@ -61,10 +61,10 @@ Displayed to all users before authentication. Contains a standard unauthorized-a
 
 ```bash
 # Full hardening stack
-ansible-playbook playbooks/02_harden.yml
+ansible-playbook playbooks/03_harden.yml
 
 # SSH role only
-ansible-playbook playbooks/02_harden.yml --tags ssh
+ansible-playbook playbooks/03_harden.yml --tags ssh
 ```
 
 ---

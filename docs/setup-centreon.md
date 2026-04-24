@@ -107,9 +107,9 @@ For each target machine:
 
 | Field | Value |
 |-------|-------|
-| Name | linux-target-01 (match Ansible inventory name) |
+| Name | linux-test (match Ansible inventory name) |
 | Alias | Descriptive name |
-| IP address / DNS | Target IP (e.g. 10.1.91.102) |
+| IP address / DNS | Target IP (e.g. 10.1.90.10) |
 | SNMP version | 2c |
 | SNMP community | public_ro |
 | Monitored from | Select the poller that can reach this target |
@@ -221,8 +221,8 @@ Use consistent naming across Ansible inventory and Centreon:
 
 | System | Name format | Example |
 |--------|------------|---------|
-| Ansible inventory | `<role>-<site>-<number>` | linux-target-01 |
-| Centreon host name | Same as Ansible | linux-target-01 |
+| Ansible inventory | Match the exact inventory hostname | linux-test |
+| Centreon host name | Same as Ansible | linux-test |
 | Centreon alias | Human-readable | Web Server 01 |
 
 ---

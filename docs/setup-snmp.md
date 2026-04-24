@@ -41,7 +41,7 @@ Edit `inventory/group_vars/all.yml`:
 
 ```yaml
 snmp_community: "public_ro"
-snmp_allowed_source: "10.1.91.10"   # Replace with your monitoring/Centreon poller IP
+snmp_allowed_source: "<poller-ip>"   # Replace with your monitoring/Centreon poller IP
 ```
 
 ---
@@ -50,10 +50,10 @@ snmp_allowed_source: "10.1.91.10"   # Replace with your monitoring/Centreon poll
 
 ```bash
 # Full hardening stack
-ansible-playbook playbooks/02_harden.yml
+ansible-playbook playbooks/03_harden.yml
 
 # SNMP role only
-ansible-playbook playbooks/02_harden.yml --tags snmp
+ansible-playbook playbooks/03_harden.yml --tags snmp
 ```
 
 What the role does:
@@ -74,7 +74,7 @@ ansible linux_targets -m command -a "snmpget -v2c -c public_ro 127.0.0.1 sysDesc
 Expected output:
 
 ```
-SNMPv2-MIB::sysDescr.0 = STRING: Linux linux-target-01 5.15.0-x-generic ...
+SNMPv2-MIB::sysDescr.0 = STRING: Linux linux-test ...
 ```
 
 ---

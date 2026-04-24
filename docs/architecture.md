@@ -7,14 +7,16 @@ Technical architecture of the Guardia School infrastructure automation project.
 ## Overview
 
 The project uses a push-based Ansible model. The controller connects to target machines over SSH,
-applies configuration roles, and stores all secrets in a local HashiCorp Vault instance.
+applies configuration roles, and stores all secrets in a local HashiCorp Vault instance. Centreon
+and OPNsense are documented integration points around the automation, not roles deployed by the
+main playbook sequence.
 
 ---
 
 ## Infrastructure Topology
 
 ```
-Ansible Controller (srv-ansible)
+Ansible Controller (localhost)
   - Ansible 2.12+
   - HashiCorp Vault 1.15+
   - SSH key management
@@ -22,7 +24,7 @@ Ansible Controller (srv-ansible)
         | SSH port 22 (bootstrap) -> 2222 (post-hardening)
         |
   ┌─────┴──────────────────────────────┐
-  │ Network 10.1.91.0/24               │
+  │ Reference network 10.1.90.0/24     │
   └─────┬──────────────────────────────┘
         |
 Linux Targets (Ubuntu 22.04 / Debian 12)
@@ -37,6 +39,10 @@ Linux Targets (Ubuntu 22.04 / Debian 12)
 Centreon Monitoring Server (optional)
   - Collects SNMP metrics
   - Generates alerts and trends
+
+Optional OPNsense Gateway
+  - External firewall/router reference
+  - Documented in setup-opnsense.md
 ```
 
 ---
@@ -124,7 +130,7 @@ secret/
    Controller -> localhost
    Installs Vault, initializes, seeds secrets
 
-3. Harden (02_harden.yml)
+3. Harden (03_harden.yml)
    Controller -> all targets via SSH key
    Roles: common -> ssh_hardening -> ufw_firewall -> snmp_agent -> managed_user
 ```
@@ -174,3 +180,4 @@ SNMP is restricted to a single monitoring source IP.
 | [setup-vault.md](setup-vault.md) | Vault setup and operations |
 | [setup-ssh.md](setup-ssh.md) | SSH hardening details |
 | [setup-firewall.md](setup-firewall.md) | UFW firewall configuration |
+| [setup-opnsense.md](setup-opnsense.md) | OPNsense gateway integration |
