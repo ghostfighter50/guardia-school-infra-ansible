@@ -6,9 +6,8 @@
 # Scans the subnet and groups hosts based on open ports.
 
 plugin: community.general.nmap
-address: 10.1.91.0/24
+address: 10.1.91.100-200
 exclude:
-  - 10.1.91.1      # gateway/firewall
   - 10.1.91.110    # Centreon poller
 strict: false
 ports: true

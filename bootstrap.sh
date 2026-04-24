@@ -22,6 +22,6 @@ echo "  1) Update inventory/nmap_discovery.yml (subnet/exclusions if needed)"
 echo "  2) Update inventory/group_vars/all.yml"
 echo "  3) ansible-playbook playbooks/00_service_account.yml -k -K"
 echo "  4) ansible-playbook playbooks/01_vault.yml -K"
-echo "  5) ansible-playbook -i inventory/nmap_discovery.yml playbooks/02_discover.yml"
+echo "  5) ansible-playbook -i inventory/hosts.yml -i inventory/nmap_discovery.yml playbooks/02_discover.yml"
 echo "  6) ansible-playbook playbooks/03_harden.yml"
 

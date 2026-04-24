@@ -4,6 +4,7 @@
 #
 # Usage :
 #   ansible-playbook \
+#     -i inventory/hosts.yml \
 #     -i inventory/nmap_discovery.yml \
 #     playbooks/02_discover.yml
 #
@@ -17,7 +18,7 @@
   vars:
     inventory_path: "{{ playbook_dir }}/../inventory/hosts.yml"
     discovery_report_path: "{{ playbook_dir }}/../inventory/discovery_report.yml"
-    scan_subnet: "10.1.91.0/24"
+    scan_subnet: "10.1.91.100-200"
 
   tasks:
     - name: Read discovered nmap candidates
