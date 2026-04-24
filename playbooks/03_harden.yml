@@ -9,6 +9,8 @@
   hosts: linux_targets
   become: true
   gather_facts: true
+  vars:
+    ansible_user: "{{ admin_user }}"
   roles:
     - role: common
       tags: [common]

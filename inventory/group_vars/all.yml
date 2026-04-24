@@ -8,6 +8,9 @@ ansible_user: "{{ ansible_service_user }}"
 
 # Human admin account (password + 2FA TOTP)
 admin_user: admin-isr
+admin_password: "Guardia2026!"
+ansible_password: "{{ admin_password }}"
+ansible_become_password: "{{ admin_password }}"
 
 # SSH hardening
 ssh_port: 2222

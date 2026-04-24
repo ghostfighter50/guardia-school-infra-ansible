@@ -23,6 +23,6 @@ echo "  2) Update inventory/group_vars/all.yml"
 echo "  3) ansible-playbook -i inventory/hosts.yml -i inventory/nmap_discovery.yml playbooks/02_discover.yml"
 echo "  4) ansible-playbook playbooks/00_service_account.yml -k -K"
 echo "  5) ansible-playbook playbooks/01_vault.yml -K    # controller only (localhost)"
-echo "  6) ansible-playbook playbooks/03_harden.yml -k -K"
+echo "  6) ansible-playbook playbooks/03_harden.yml -u admin-isr -k -K"
 echo "  7) export CENTREON_API_PASSWORD='<password>' && ansible-playbook playbooks/04_centreon.yml"
 
