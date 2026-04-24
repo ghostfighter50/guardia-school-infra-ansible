@@ -29,24 +29,16 @@
             groups['candidate_linux_target'] | default([])
           }}
 
-    - name: Build discovered IP list
+    - name: Build discovered host records
       ansible.builtin.set_fact:
-        discovered_ips: "{{ (discovered_ips | default([])) + [ (hostvars[item].ansible_host | default(item)) ] }}"
-      loop: "{{ discovered_candidates }}"
-
-    - name: Deduplicate discovered IPs
-      ansible.builtin.set_fact:
-        discovered_ips: "{{ discovered_ips | default([]) | unique }}"
-
-    - name: Build generated host map
-      ansible.builtin.set_fact:
-        generated_hosts: >-
+        discovered_targets: >-
           {{
-            (generated_hosts | default({}))
-            | combine({
-                ('auto_' ~ ((hostvars[item].ansible_host | default(item)) | regex_replace('[^0-9A-Za-z_]', '_'))): {
-                  'ansible_host': (hostvars[item].ansible_host | default(item)),
-                  'ansible_port': (
+            (discovered_targets | default([]))
+            + [
+                {
+                  'name': item,
+                  'ip': (hostvars[item].ip | default(hostvars[item].ansible_host | default(item))),
+                  'port': (
                     (
                       hostvars[item].ports | default([])
                       | selectattr('port', 'equalto', '2222')
@@ -65,9 +57,29 @@
                     | default(22, true)
                   )
                 }
+              ]
+          }}
+      loop: "{{ discovered_candidates }}"
+
+    - name: Deduplicate discovered IPs
+      ansible.builtin.set_fact:
+        discovered_ips: "{{ discovered_targets | default([]) | map(attribute='ip') | list | unique }}"
+
+    - name: Build generated host map
+      ansible.builtin.set_fact:
+        generated_hosts: >-
+          {{
+            (generated_hosts | default({}))
+            | combine({
+                ('auto_' ~ (item.ip | regex_replace('[^0-9A-Za-z_]', '_'))): {
+                  'ansible_host': item.ip,
+                  'ansible_port': item.port
+                }
               })
           }}
-      loop: "{{ discovered_ips | default([]) }}"
+      loop: "{{ discovered_targets | default([]) }}"
+      loop_control:
+        label: "{{ item.ip }}"
 
     - name: Write clean generated inventory
       ansible.builtin.copy:
