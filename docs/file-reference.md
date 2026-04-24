@@ -142,10 +142,10 @@ Key sshd settings (via 99-hardening.conf.j2):
 |---------|-------|
 | Port | 2222 |
 | PermitRootLogin | no |
-| PasswordAuthentication | no |
+| PasswordAuthentication | yes |
 | PubkeyAuthentication | yes |
 | KbdInteractiveAuthentication | yes |
-| AuthenticationMethods | publickey,keyboard-interactive |
+| AuthenticationMethods | publickey,keyboard-interactive password,keyboard-interactive |
 | Match User ansible | AuthenticationMethods publickey |
 
 ### ufw_firewall

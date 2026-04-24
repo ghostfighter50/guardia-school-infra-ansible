@@ -33,10 +33,10 @@ File deployed: `/etc/ssh/sshd_config.d/99-hardening.conf`
 |---------|-------|--------|
 | Port | 2222 | Non-standard port reduces automated scan noise |
 | PermitRootLogin | no | Prevents direct root access |
-| PasswordAuthentication | no | Forces key-based authentication |
+| PasswordAuthentication | yes | Allows password-based login when combined with TOTP |
 | PubkeyAuthentication | yes | Required for key auth |
 | KbdInteractiveAuthentication | yes | Required for TOTP prompt |
-| AuthenticationMethods | publickey,keyboard-interactive | Key + TOTP for all users |
+| AuthenticationMethods | publickey,keyboard-interactive password,keyboard-interactive | Allows either key + TOTP or password + TOTP |
 | Match User ansible | AuthenticationMethods publickey | Key-only for service account |
 | Banner | /etc/ssh/banner.txt | Legal warning at login |
 | UsePAM | yes | Required for PAM TOTP |

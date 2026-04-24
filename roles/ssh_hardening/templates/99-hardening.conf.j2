@@ -17,12 +17,12 @@ PrintMotd no
 
 Banner /etc/ssh/banner.txt
 
-# Human users: SSH key + keyboard-interactive (TOTP via PAM)
-PasswordAuthentication no
+# Human users: allow either key + TOTP or password + TOTP
+PasswordAuthentication yes
 PubkeyAuthentication yes
 KbdInteractiveAuthentication yes
 UsePAM yes
-AuthenticationMethods publickey,keyboard-interactive
+AuthenticationMethods publickey,keyboard-interactive password,keyboard-interactive
 
 # Ansible service account: SSH key only (no 2FA)
 Match User {{ ansible_service_user }}
