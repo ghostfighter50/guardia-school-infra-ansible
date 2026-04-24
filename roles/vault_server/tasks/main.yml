@@ -1,0 +1,176 @@
+---
+# Installs and initialises HashiCorp Vault (single-node, file storage, TLS off for lab use).
+
+- name: Install prerequisites
+  ansible.builtin.apt:
+    name:
+      - gnupg
+      - curl
+      - lsb-release
+      - python3-hvac
+    state: present
+
+- name: Add HashiCorp GPG key
+  ansible.builtin.get_url:
+    url: https://apt.releases.hashicorp.com/gpg
+    dest: /usr/share/keyrings/hashicorp-archive-keyring.asc
+    mode: '0644'
+
+- name: Add HashiCorp APT repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.asc]
+      https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main
+    state: present
+    filename: hashicorp
+
+- name: Install Vault
+  ansible.builtin.apt:
+    name: vault
+    state: present
+    update_cache: true
+
+- name: Create Vault data directory
+  ansible.builtin.file:
+    path: "{{ vault_data_path }}"
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0750'
+
+- name: Deploy vault.hcl
+  ansible.builtin.template:
+    src: vault.hcl.j2
+    dest: "{{ vault_config_path }}/vault.hcl"
+    owner: vault
+    group: vault
+    mode: '0640'
+  notify: restart vault
+
+- name: Start and enable Vault
+  ansible.builtin.systemd:
+    name: vault
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for Vault API to be ready
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ vault_listen_port }}/v1/sys/health"
+    status_code: [200, 429, 472, 473, 501, 503]
+  register: vault_health
+  until: vault_health.status in [200, 429, 472, 473, 501, 503]
+  retries: 15
+  delay: 2
+
+- name: Check initialisation status
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ vault_listen_port }}/v1/sys/init"
+    status_code: 200
+  register: vault_init_status
+
+- name: Initialise Vault
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ vault_listen_port }}/v1/sys/init"
+    method: POST
+    body_format: json
+    body:
+      secret_shares: "{{ vault_init_key_shares }}"
+      secret_threshold: "{{ vault_init_key_threshold }}"
+    status_code: 200
+    return_content: true
+  register: vault_init_result
+  when: not vault_init_status.json.initialized
+  no_log: true
+
+- name: Save unseal keys and root token
+  ansible.builtin.copy:
+    dest: "{{ vault_init_file }}"
+    content: "{{ vault_init_result.json | to_nice_json }}\n"
+    owner: root
+    group: root
+    mode: '0600'
+  when: vault_init_result.json is defined
+  no_log: true
+
+- name: Read init file
+  ansible.builtin.slurp:
+    src: "{{ vault_init_file }}"
+  register: vault_init_slurp
+  no_log: true
+
+- name: Parse init data
+  ansible.builtin.set_fact:
+    vault_init_data: "{{ vault_init_slurp.content | b64decode | from_json }}"
+  no_log: true
+
+- name: Check seal status
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ vault_listen_port }}/v1/sys/seal-status"
+    status_code: 200
+  register: vault_seal_status
+
+- name: Unseal Vault
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ vault_listen_port }}/v1/sys/unseal"
+    method: POST
+    body_format: json
+    body:
+      key: "{{ item }}"
+    status_code: 200
+  loop: "{{ vault_init_data.keys_base64[:vault_init_key_threshold] }}"
+  loop_control:
+    label: "key #{{ ansible_loop.index }}"
+    extended: true
+  when: vault_seal_status.json.sealed | bool
+  no_log: true
+
+- name: List existing mounts
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ vault_listen_port }}/v1/sys/mounts"
+    headers:
+      X-Vault-Token: "{{ vault_init_data.root_token }}"
+    status_code: 200
+    return_content: true
+  register: vault_mounts
+  no_log: true
+
+- name: Enable KV v2 secret engine
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ vault_listen_port }}/v1/sys/mounts/{{ vault_kv_mount }}"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ vault_init_data.root_token }}"
+    body_format: json
+    body:
+      type: kv
+      options:
+        version: "2"
+    status_code: [200, 204]
+  when: (vault_kv_mount ~ '/') not in vault_mounts.json
+  no_log: true
+
+- name: Seed initial secrets
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ vault_listen_port }}/v1/{{ vault_kv_mount }}/data/{{ item.path }}"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ vault_init_data.root_token }}"
+    body_format: json
+    body:
+      data: "{{ item.data }}"
+    status_code: [200, 204]
+  loop: "{{ vault_seed_secrets }}"
+  loop_control:
+    label: "{{ item.path }}"
+  no_log: true
+
+- name: Set VAULT_ADDR in admin .bashrc
+  ansible.builtin.lineinfile:
+    path: "/home/{{ admin_user }}/.bashrc"
+    line: 'export VAULT_ADDR="http://127.0.0.1:{{ vault_listen_port }}"'
+    regexp: '^export VAULT_ADDR='
+    state: present

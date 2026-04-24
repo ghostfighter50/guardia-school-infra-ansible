@@ -1,0 +1,39 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - vim
+      - htop
+      - net-tools
+      - fail2ban
+      - unattended-upgrades
+      - libpam-google-authenticator
+      - qrencode
+    state: present    update_cache: true
+    cache_valid_time: 3600
+- name: Enable and start fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    enabled: true
+    state: started
+
+- name: Configure fail2ban for sshd
+  ansible.builtin.copy:
+    dest: /etc/fail2ban/jail.d/sshd.local
+    content: |
+      [sshd]
+      enabled  = true
+      port     = {{ ssh_port }}
+      maxretry = 5
+      findtime = 600
+      bantime  = 3600
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart fail2ban

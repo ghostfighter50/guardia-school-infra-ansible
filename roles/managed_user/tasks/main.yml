@@ -1,0 +1,120 @@
+---
+# Provisions a managed user account with a Vault-backed password and TOTP 2FA.
+# Idempotent: skips password and TOTP generation if credentials already exist in Vault.
+# Packages (libpam-google-authenticator, qrencode) are installed by the common role.
+
+# Password management
+- name: Look up existing password from Vault
+  delegate_to: localhost
+  become: false
+  ansible.builtin.uri:
+    url: "{{ vault_addr }}/v1/secret/data/hosts/{{ inventory_hostname }}/user"
+    method: GET
+    headers:
+      X-Vault-Token: "{{ lookup('file', '~/.vault-token') }}"
+    status_code: [200, 404]
+    return_content: true
+  register: vault_user_lookup
+  no_log: true
+
+- name: Generate random password (user not yet in Vault)
+  ansible.builtin.set_fact:
+    managed_user_password: >-
+      {{ lookup('password', '/dev/null length=' ~ managed_user_password_length
+         ~ ' chars=ascii_letters,digits') }}
+    managed_user_is_new: true
+  when: vault_user_lookup.status == 404
+  no_log: true
+
+- name: Use existing password from Vault
+  ansible.builtin.set_fact:
+    managed_user_password: "{{ vault_user_lookup.json.data.data.password }}"
+    managed_user_is_new: false
+  when: vault_user_lookup.status == 200
+  no_log: true
+
+# User account
+
+- name: Create user {{ managed_user_name }}
+  ansible.builtin.user:
+    name: "{{ managed_user_name }}"
+    comment: "{{ managed_user_fullname }}"
+    groups: "{{ managed_user_groups }}"
+    shell: "{{ managed_user_shell }}"
+    password: "{{ managed_user_password | password_hash('sha512') }}"
+    update_password: always
+    create_home: true
+    state: present
+  no_log: true
+
+- name: Force password change on first login
+  ansible.builtin.command: "chage -d 0 {{ managed_user_name }}"
+  changed_when: true
+  when: managed_user_force_password_change | bool and managed_user_is_new | bool
+
+- name: Store new password in Vault
+  delegate_to: localhost
+  become: false
+  ansible.builtin.uri:
+    url: "{{ vault_addr }}/v1/secret/data/hosts/{{ inventory_hostname }}/user"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ lookup('file', '~/.vault-token') }}"
+    body_format: json
+    body:
+      data:
+        username: "{{ managed_user_name }}"
+        password: "{{ managed_user_password }}"
+        created_at: "{{ ansible_date_time.iso8601 }}"
+    status_code: [200, 204]
+  when: managed_user_is_new | bool
+  no_log: true
+
+# TOTP 2FA────
+
+- name: Check if TOTP secret already exists for {{ managed_user_name }}
+  ansible.builtin.stat:
+    path: "/home/{{ managed_user_name }}/.google_authenticator"
+  register: managed_user_ga_file
+
+- name: Generate TOTP secret for {{ managed_user_name }}
+  become: true
+  become_user: "{{ managed_user_name }}"
+  ansible.builtin.shell: |
+    echo "-1" | google-authenticator -t -d -f -r 3 -R 30 -w 3 -Q UTF8 \
+      -s /home/{{ managed_user_name }}/.google_authenticator -e 5
+  args:
+    executable: /bin/bash
+  when: not managed_user_ga_file.stat.exists
+  changed_when: true
+
+- name: Read TOTP file for {{ managed_user_name }}
+  ansible.builtin.slurp:
+    src: "/home/{{ managed_user_name }}/.google_authenticator"
+  register: managed_user_ga_slurp
+  no_log: true
+
+- name: Parse TOTP secret and scratch codes
+  ansible.builtin.set_fact:
+    managed_user_totp_secret: "{{ (managed_user_ga_slurp.content | b64decode).split('\n')[0] }}"
+    managed_user_scratch_codes: >-
+      {{ (managed_user_ga_slurp.content | b64decode).split('\n')
+         | select('match', '^[0-9]{8}$') | list }}
+  no_log: true
+
+- name: Store TOTP secret in Vault
+  delegate_to: localhost
+  become: false
+  ansible.builtin.uri:
+    url: "{{ vault_addr }}/v1/secret/data/hosts/{{ inventory_hostname }}/2fa"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ lookup('file', '~/.vault-token') }}"
+    body_format: json
+    body:
+      data:
+        totp_secret: "{{ managed_user_totp_secret }}"
+        scratch_codes: "{{ managed_user_scratch_codes }}"
+    status_code: [200, 204]
+  when: not managed_user_ga_file.stat.exists
+  no_log: true

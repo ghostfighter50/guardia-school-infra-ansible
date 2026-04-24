@@ -1,0 +1,7 @@
+---
+managed_user_name: "deploy"
+managed_user_fullname: "Deploy User"
+managed_user_groups: "sudo"
+managed_user_shell: "/bin/bash"
+managed_user_password_length: 24
+managed_user_force_password_change: true

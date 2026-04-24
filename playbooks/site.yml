@@ -1,0 +1,8 @@
+---
+# Full site deployment (runs all playbooks in order).
+# Assumes bootstrap has already been run on all hosts.
+#
+#   ansible-playbook playbooks/site.yml
+
+- import_playbook: 01_vault.yml
+- import_playbook: 02_harden.yml

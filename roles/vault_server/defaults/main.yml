@@ -1,0 +1,27 @@
+---
+vault_listen_address: "0.0.0.0"
+vault_listen_port: 8200
+vault_cluster_port: 8201
+vault_api_addr: "http://{{ ansible_default_ipv4.address | default('127.0.0.1') }}:{{ vault_listen_port }}"
+vault_cluster_addr: "http://{{ ansible_default_ipv4.address | default('127.0.0.1') }}:{{ vault_cluster_port }}"
+vault_data_path: "/opt/vault/data"
+vault_config_path: "/etc/vault.d"
+
+# Shamir secret sharing: 5 shards, 3 required to unseal
+vault_init_key_shares: 5
+vault_init_key_threshold: 3
+
+# Unseal keys + root token are saved here after init (chmod 600)
+vault_init_file: "/root/vault_init.json"
+
+# KV v2 engine mount path
+vault_kv_mount: "secret"
+
+# Initial secrets seeded after first init
+vault_seed_secrets:
+  - path: "infra/bootstrap"
+    data:
+      password: "ChangeMe2026!"
+  - path: "infra/admin"
+    data:
+      password: "ChangeMe2026!"

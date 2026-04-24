@@ -1,0 +1,31 @@
+# {{ ansible_managed }}
+# SSH hardening configuration – OpenSSH 8.7+ compatible
+
+Port {{ ssh_port }}
+Protocol 2
+
+PermitRootLogin {{ ssh_permit_root_login }}
+MaxAuthTries {{ ssh_max_auth_tries }}
+LoginGraceTime {{ ssh_login_grace_time }}
+ClientAliveInterval {{ ssh_client_alive_interval }}
+ClientAliveCountMax {{ ssh_client_alive_count_max }}
+
+PermitEmptyPasswords no
+X11Forwarding no
+AllowTcpForwarding no
+PrintMotd no
+
+Banner /etc/ssh/banner.txt
+
+# Human users: SSH key + keyboard-interactive (TOTP via PAM)
+PasswordAuthentication no
+PubkeyAuthentication yes
+KbdInteractiveAuthentication yes
+UsePAM yes
+AuthenticationMethods publickey,keyboard-interactive
+
+# Ansible service account: SSH key only (no 2FA)
+Match User {{ ansible_service_user }}
+    AuthenticationMethods publickey
+    PasswordAuthentication no
+    KbdInteractiveAuthentication no

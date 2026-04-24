@@ -1,0 +1,17 @@
+# {{ ansible_managed }}
+# SNMPv2c - read-only, restricted by source IP
+
+rocommunity {{ snmp_community }} {{ snmp_allowed_source }}
+rocommunity {{ snmp_community }} 127.0.0.1
+
+sysLocation {{ snmp_location }}
+sysContact  {{ snmp_contact }}
+sysServices 72
+
+agentAddress udp:161
+
+view   systemonly  included   .1
+access notConfigGroup "" any noauth exact systemonly none none
+
+disk  /    10%
+load  12 14 14

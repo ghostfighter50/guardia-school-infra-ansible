@@ -1,0 +1,54 @@
+---
+# Creates the Ansible service account on a fresh Debian/Ubuntu machine.
+# Run as the initial admin user (password login) before switching to key-based auth.
+
+- name: Install sudo (absent by default on Debian if root password was set at install)
+  ansible.builtin.apt:
+    name: sudo
+    state: present
+    update_cache: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Ensure {{ admin_user }} is in the sudo group
+  ansible.builtin.user:
+    name: "{{ admin_user }}"
+    groups: sudo
+    append: true
+
+- name: Create group {{ ansible_service_user }}
+  ansible.builtin.group:
+    name: "{{ ansible_service_user }}"
+    state: present
+
+- name: Create user {{ ansible_service_user }}
+  ansible.builtin.user:
+    name: "{{ ansible_service_user }}"
+    group: "{{ ansible_service_user }}"
+    shell: /bin/bash
+    home: "{{ ansible_service_user_home }}"
+    create_home: true
+    state: present
+
+- name: Allow {{ ansible_service_user }} passwordless sudo
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/ansible
+    content: "{{ ansible_service_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    owner: root
+    group: root
+    mode: '0440'
+    validate: '/usr/sbin/visudo -cf %s'
+
+- name: Create .ssh directory for {{ ansible_service_user }}
+  ansible.builtin.file:
+    path: "{{ ansible_service_user_home }}/.ssh"
+    state: directory
+    owner: "{{ ansible_service_user }}"
+    group: "{{ ansible_service_user }}"
+    mode: '0700'
+
+- name: Deploy Ansible public key
+  ansible.posix.authorized_key:
+    user: "{{ ansible_service_user }}"
+    key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/ansible_id_ed25519.pub') }}"
+    state: present
+    manage_dir: false

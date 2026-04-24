@@ -1,0 +1,87 @@
+---
+# sshd configuration
+
+- name: Deploy legal banner
+  ansible.builtin.copy:
+    src: banner.txt
+    dest: /etc/ssh/banner.txt
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Deploy hardened sshd config
+  ansible.builtin.template:
+    src: 99-hardening.conf.j2
+    dest: /etc/ssh/sshd_config.d/99-hardening.conf
+    owner: root
+    group: root
+    mode: '0600'
+    validate: 'sshd -t -f %s'
+  notify: restart sshd
+
+- name: Ensure sshd is started and enabled
+  ansible.builtin.service:
+    name: ssh
+    state: started
+    enabled: true
+
+# PAM: enable TOTP for sshd
+
+- name: Configure PAM sshd to require TOTP
+  ansible.builtin.blockinfile:
+    path: /etc/pam.d/sshd
+    marker: "# {mark} ANSIBLE MANAGED - TOTP"
+    block: |
+      auth required pam_google_authenticator.so nullok
+    insertafter: "^@include common-auth"
+  notify: restart sshd
+
+# Admin user TOTP setup
+
+- name: Check if TOTP secret already exists for {{ admin_user }}
+  ansible.builtin.stat:
+    path: "/home/{{ admin_user }}/.google_authenticator"
+  register: admin_ga_file
+
+- name: Generate TOTP secret for {{ admin_user }}
+  become: true
+  become_user: "{{ admin_user }}"
+  ansible.builtin.shell: |
+    echo "-1" | google-authenticator -t -d -f -r 3 -R 30 -w 3 -Q UTF8 \
+      -s /home/{{ admin_user }}/.google_authenticator -e 5
+  args:
+    executable: /bin/bash
+  when: not admin_ga_file.stat.exists
+  changed_when: true
+
+- name: Read admin TOTP file
+  ansible.builtin.slurp:
+    src: "/home/{{ admin_user }}/.google_authenticator"
+  register: admin_ga_slurp
+  no_log: true
+
+- name: Parse admin TOTP secret and scratch codes
+  ansible.builtin.set_fact:
+    admin_totp_secret: "{{ (admin_ga_slurp.content | b64decode).split('\n')[0] }}"
+    admin_scratch_codes: >-
+      {{ (admin_ga_slurp.content | b64decode).split('\n')
+         | select('match', '^[0-9]{8}$') | list }}
+  no_log: true
+
+- name: Store admin TOTP secret in Vault
+  delegate_to: localhost
+  become: false
+  ansible.builtin.uri:
+    url: "{{ vault_addr }}/v1/secret/data/hosts/{{ inventory_hostname }}/admin_2fa"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ lookup('file', '~/.vault-token') }}"
+    body_format: json
+    body:
+      data:
+        username: "{{ admin_user }}"
+        totp_secret: "{{ admin_totp_secret }}"
+        scratch_codes: "{{ admin_scratch_codes }}"
+    status_code: [200, 204]
+  when: not admin_ga_file.stat.exists
+  no_log: true

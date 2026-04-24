@@ -1,0 +1,34 @@
+---
+- name: Install and enable UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+- name: Allow SSH on configured port
+  community.general.ufw:
+    rule: allow
+    direction: in
+    proto: tcp
+    port: "{{ ssh_port | string }}"
+
+- name: Allow SNMP from monitoring source
+  community.general.ufw:
+    rule: allow
+    direction: in
+    proto: udp
+    port: '161'
+    from_ip: "{{ snmp_allowed_source }}"
+
+- name: Default deny incoming
+  community.general.ufw:
+    default: deny
+    direction: incoming
+
+- name: Default allow outgoing
+  community.general.ufw:
+    default: allow
+    direction: outgoing
+
+- name: Enable ufw
+  community.general.ufw:
+    state: enabled

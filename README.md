@@ -1,0 +1,246 @@
+# Guardia School - Infrastructure Automation
+
+Automated deployment and hardening of Linux infrastructure using Ansible, HashiCorp Vault,
+UFW firewall, SNMP monitoring, and TOTP two-factor authentication.
+
+---
+
+## Quick Start
+
+```bash
+# 1. Bootstrap service account (once per target, prompts for SSH password)
+ansible-playbook playbooks/00_service_account.yml -k
+
+# 2. Deploy Vault (prompts for sudo password on controller)
+ansible-playbook playbooks/01_vault.yml -K
+
+# 3. Harden all targets
+ansible-playbook playbooks/02_harden.yml
+```
+
+Or run everything in one command:
+
+```bash
+ansible-playbook playbooks/site.yml -K
+```
+
+---
+
+## What Gets Deployed
+
+| Component | Details |
+|-----------|---------|
+| HashiCorp Vault | KV v2 secrets engine, Shamir 5-of-3 key sharing |
+| SSH hardening | Port 2222, no root login, key + TOTP authentication |
+| UFW firewall | Deny-all inbound, SSH and SNMP explicitly allowed |
+| SNMP agent | SNMPv2c read-only, source IP restricted |
+| fail2ban | SSH brute-force protection, 1-hour ban after 5 failures |
+| Managed user | `deploy` account with Vault-stored password and TOTP |
+
+---
+
+## Architecture
+
+### Infrastructure overview
+
+| Component | Version | Role |
+|-----------|---------|------|
+| Ansible controller | 2.12+ | Orchestration engine |
+| Linux targets | Ubuntu 22.04 / Debian 12 | Managed systems |
+| HashiCorp Vault | 1.15+ | Secrets storage |
+| NET-SNMP | 5.x | Monitoring agent |
+| Centreon | 24.x+ | Monitoring platform (optional) |
+
+### Deployment sequence
+
+```
+00_service_account.yml   Controller -> targets (SSH password)
+                         Creates ansible user with key + sudo
+
+01_vault.yml             Controller -> localhost
+                         Installs Vault, initializes, seeds secrets
+
+02_harden.yml            Controller -> all targets (SSH key)
+                         common -> ssh_hardening -> ufw_firewall -> snmp_agent -> managed_user
+```
+
+### Roles
+
+| Role | Scope | Responsibility |
+|------|-------|----------------|
+| `service_account` | Bootstrap only | Create ansible user, SSH key, sudoers |
+| `common` | All targets | Base packages, fail2ban, TOTP libraries |
+| `ssh_hardening` | All targets | sshd config, PAM TOTP, admin TOTP generation |
+| `ufw_firewall` | All targets | Deny-all policy, SSH and SNMP allow rules |
+| `snmp_agent` | All targets | snmpd install, config, verification |
+| `managed_user` | All targets | deploy user, Vault password and TOTP |
+| `vault_server` | Controller only | Vault install, init, unseal, KV v2, secret seeding |
+
+---
+
+## Configuration
+
+### Inventory (`inventory/hosts.yml`)
+
+```yaml
+all:
+  children:
+    linux_targets:
+      hosts:
+        linux-target-01:
+          ansible_host: 10.1.91.102
+        linux-target-02:
+          ansible_host: 10.1.91.103
+```
+
+### Key variables (`inventory/group_vars/all.yml`)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `ssh_port` | 2222 | SSH port after hardening |
+| `snmp_community` | public_ro | SNMPv2c community string |
+| `snmp_allowed_source` | 127.0.0.1 | Monitoring server IP for SNMP |
+| `vault_addr` | http://127.0.0.1:8200 | Vault API address |
+
+Change `snmp_allowed_source` to your monitoring server IP before first deployment.
+
+---
+
+## Security Model
+
+### Authentication
+
+| Account | Method | Notes |
+|---------|--------|-------|
+| `ansible` | SSH key only | No TOTP - automation must not be interrupted |
+| `admin` | SSH key + TOTP | Full two-factor enforcement |
+| `deploy` | SSH key + TOTP | Full two-factor enforcement |
+
+### Secrets storage
+
+All credentials are generated at deploy time and stored in Vault. No hardcoded secrets
+in playbooks or variable files (defaults use placeholder values marked `ChangeMe`).
+
+Vault paths:
+
+| Path | Contents |
+|------|---------|
+| `secret/infra/bootstrap` | Bootstrap password |
+| `secret/infra/admin` | Admin password |
+| `secret/hosts/<hostname>/admin_2fa` | Admin TOTP secret and scratch codes |
+| `secret/hosts/<hostname>/user` | Managed user password |
+| `secret/hosts/<hostname>/2fa` | Managed user TOTP secret and scratch codes |
+
+### Firewall
+
+Default policy: deny all inbound. Explicit allow rules:
+
+| Protocol | Port | Source |
+|----------|------|--------|
+| TCP | 2222 | Any |
+| UDP | 161 | `snmp_allowed_source` |
+
+---
+
+## Running Specific Roles
+
+```bash
+# Apply only SSH hardening
+ansible-playbook playbooks/02_harden.yml --tags ssh
+
+# Apply only firewall rules
+ansible-playbook playbooks/02_harden.yml --tags firewall
+
+# Apply only SNMP configuration
+ansible-playbook playbooks/02_harden.yml --tags snmp
+
+# Apply only managed user provisioning
+ansible-playbook playbooks/02_harden.yml --tags users
+
+# Limit to a specific host
+ansible-playbook playbooks/02_harden.yml --limit linux-target-01
+```
+
+---
+
+## Project Structure
+
+```
+guardia-school-ansible/
+├── ansible.cfg                     # Ansible global settings
+├── requirements.yml                # Collection dependencies
+├── README.md                       # This file
+│
+├── inventory/
+│   ├── hosts.yml                   # Host definitions
+│   └── group_vars/
+│       └── all.yml                 # Global variables
+│
+├── playbooks/
+│   ├── 00_service_account.yml      # Bootstrap service account
+│   ├── 01_vault.yml                # Deploy Vault
+│   ├── 02_harden.yml               # Harden all targets
+│   └── site.yml                    # Complete deployment (01 + 02)
+│
+├── roles/
+│   ├── service_account/            # Service account bootstrap
+│   ├── common/                     # Base packages and fail2ban
+│   ├── ssh_hardening/              # SSH daemon hardening and PAM TOTP
+│   ├── ufw_firewall/               # Host firewall rules
+│   ├── snmp_agent/                 # SNMP daemon configuration
+│   ├── managed_user/               # Deploy user and Vault integration
+│   └── vault_server/               # Vault installation and initialization
+│
+└── docs/
+    ├── index.md                    # Documentation index
+    ├── installation.md             # End-to-end deployment guide
+    ├── architecture.md             # System design and components
+    ├── file-reference.md           # Every file explained
+    ├── setup-vault.md              # Vault setup and operation
+    ├── setup-ssh.md                # SSH hardening guide
+    ├── setup-2fa.md                # TOTP 2FA guide
+    ├── setup-firewall.md           # UFW firewall guide
+    ├── setup-snmp.md               # SNMP agent guide
+    ├── setup-centreon.md           # Centreon monitoring integration
+    ├── troubleshooting.md          # Problem diagnosis
+    └── validation.md               # Deployment validation checklist
+```
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [docs/installation.md](docs/installation.md) | Step-by-step deployment from scratch |
+| [docs/architecture.md](docs/architecture.md) | System design, topology, data flows |
+| [docs/file-reference.md](docs/file-reference.md) | Every file and variable explained |
+| [docs/setup-vault.md](docs/setup-vault.md) | Vault deployment and key management |
+| [docs/setup-ssh.md](docs/setup-ssh.md) | SSH hardening and PAM configuration |
+| [docs/setup-2fa.md](docs/setup-2fa.md) | TOTP enrollment and recovery |
+| [docs/setup-firewall.md](docs/setup-firewall.md) | UFW rules and management |
+| [docs/setup-snmp.md](docs/setup-snmp.md) | SNMP agent and community configuration |
+| [docs/setup-centreon.md](docs/setup-centreon.md) | Centreon host registration and templates |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Diagnosing common failures |
+| [docs/validation.md](docs/validation.md) | Phase-by-phase validation checklist |
+
+---
+
+## Post-Deployment Checklist
+
+- [ ] Update `snmp_allowed_source` to monitoring server IP
+- [ ] Change default Vault seed passwords in `roles/vault_server/defaults/main.yml`
+- [ ] Back up `/root/vault_init.json` to secure offline storage
+- [ ] Distribute Vault unseal shards to separate administrators
+- [ ] Enroll admin TOTP secret in authenticator app (retrieve from Vault)
+- [ ] Verify all targets pass [docs/validation.md](docs/validation.md)
+
+---
+
+## License and Support
+
+**Project**: Guardia School - Infrastructure Automation
+**Version**: 1.0.0
+**Last Updated**: April 2026
+
+For troubleshooting, see [docs/troubleshooting.md](docs/troubleshooting.md).

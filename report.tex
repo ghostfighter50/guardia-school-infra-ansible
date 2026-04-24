@@ -1,0 +1,745 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[top=3.5cm,bottom=3cm,left=2.5cm,right=2.5cm]{geometry}
+\usepackage{tikz}
+\usepackage[table]{xcolor}
+
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds, calc, shadows}
+
+\definecolor{PrimaryBlue}{RGB}{27,58,109}
+\definecolor{PrimaryBlueLight}{RGB}{235,241,248}
+\definecolor{AccentBlue}{RGB}{41,98,175}
+\definecolor{DarkText}{RGB}{38,38,38}
+\definecolor{LightGray}{RGB}{248,249,250}
+\definecolor{MediumGray}{RGB}{118,118,118}
+\definecolor{BorderGray}{RGB}{213,220,230}
+\definecolor{SlateBlue}{RGB}{54,79,107}
+\definecolor{SoftGreen}{RGB}{232,246,240}
+\definecolor{SuccessGreen}{RGB}{34,139,84}
+\definecolor{TableHead}{RGB}{240,245,252}
+\definecolor{TableStripe}{RGB}{249,251,254}
+
+\usepackage{amssymb}
+\usepackage[scaled=0.92]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.15}
+\usepackage{parskip}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xurl}
+\usepackage[hidelinks,breaklinks=true]{hyperref}
+\usepackage{multirow}
+\usepackage{ragged2e}
+\usepackage{fontawesome5}
+
+% ── FontAwesome5 icons ────────────────────────────────────────────────────────
+% Standard (blue) — for use on white/light backgrounds
+\newcommand{\iconResults}{\textcolor{AccentBlue}{\faChartBar}}
+\newcommand{\iconServer}{\textcolor{AccentBlue}{\faServer}}
+\newcommand{\iconInfo}{\textcolor{AccentBlue}{\faInfoCircle}}
+\newcommand{\iconDir}{\textcolor{AccentBlue}{\faFolderOpen}}
+\newcommand{\iconKey}{\textcolor{AccentBlue}{\faKey}}
+\newcommand{\iconLock}{\textcolor{AccentBlue}{\faLock}}
+\newcommand{\iconAlert}{\textcolor{AccentBlue}{\faExclamationTriangle}}
+\newcommand{\iconTwoFA}{\textcolor{AccentBlue}{\faUserShield}}
+\newcommand{\iconArrow}{\textcolor{AccentBlue}{\faArrowRight}}
+\newcommand{\iconBug}{\textcolor{AccentBlue}{\faBug}}
+\newcommand{\iconPerspective}{\textcolor{AccentBlue}{\faRocket}}
+% White variants — for use on dark/blue backgrounds (e.g. PrimaryBlue title bars)
+\newcommand{\iconResultsW}{\textcolor{white}{\faChartBar}}
+\newcommand{\iconPerspectiveW}{\textcolor{white}{\faRocket}}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\usepackage[skins]{tcolorbox}
+\tcbset{before skip=0.6em,after skip=0.6em}
+
+\usepackage{titlesec}
+\titleformat{\section}
+  {\color{PrimaryBlue}\Large\bfseries}
+  {}
+  {0pt}
+  {}[\vspace{-0.3ex}\textcolor{BorderGray}{\rule{\textwidth}{1pt}}]
+
+\titleformat{\subsection}
+  {\color{SlateBlue}\normalsize\bfseries}
+  {}
+  {0pt}
+  {}
+
+\titlespacing{\section}{0pt}{1.4em}{0.5em}
+\titlespacing{\subsection}{0pt}{0.9em}{0.3em}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\setlength{\headheight}{38pt}
+\setlength{\headsep}{12pt}
+\lhead{%
+  \begin{tikzpicture}[baseline=(T.base)]
+    \node[inner sep=0pt] (T) {\textcolor{MediumGray}{\small\textbf{DOCUMENTATION TECHNIQUE FINALE}}};
+  \end{tikzpicture}%
+}
+\rhead{\textcolor{PrimaryBlue}{\small\bfseries Guardia School}}
+\lfoot{\textcolor{MediumGray}{\footnotesize Document Confidentiel \textperiodcentered{} Usage Interne}}
+\rfoot{\textcolor{PrimaryBlue}{\small\textbf{\thepage}}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=DarkText,
+  urlcolor=AccentBlue,
+  pdftitle={Guardia School - Documentation Technique Finale}
+}
+
+\setlist[itemize]{leftmargin=1.4em,itemsep=0.2em,topsep=0.2em,
+  label={\textcolor{AccentBlue}{\small\textbullet}}}
+\setlength{\parskip}{0.5em}
+
+\newcommand{\statusdone}{%
+  \textcolor{SuccessGreen}{\small\faCheck\hspace{0.3em}\textbf{Terminé}}%
+}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+
+
+
+\begin{document}
+\sloppy
+
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+  \thispagestyle{empty}
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[PrimaryBlue] (current page.north west) rectangle ++(1.6cm,-\paperheight);
+    \fill[PrimaryBlueLight] (current page.north east) ++(0,-\paperheight) rectangle ++(-6cm,6cm);
+  \end{tikzpicture}
+
+  \vspace*{1.2cm}
+  \hspace*{1.2cm}
+  \begin{minipage}{0.8\textwidth}
+    \textcolor{PrimaryBlue}{\fontsize{28}{34}\selectfont\bfseries Guardia School}
+  \end{minipage}
+
+  \vspace{3.5cm}
+
+  \hspace*{1.2cm}{\fontsize{22}{28}\selectfont\bfseries\textcolor{DarkText}{Documentation Technique Finale}}\par\vspace{0.6cm}
+  \hspace*{1.2cm}{\large\textcolor{AccentBlue}{Déploiement Automatisé d'une Infrastructure Virtualisée Sécurisée}}\par\vspace{1.4cm}
+
+  \hspace*{1.2cm}\textcolor{PrimaryBlue}{\rule{6cm}{2.5pt}}\par\vspace{1.4cm}
+
+  \hspace*{1.2cm}{\normalsize\textcolor{MediumGray}{Ansible \textperiodcentered{} SNMP \textperiodcentered{} HashiCorp Vault \textperiodcentered{} UFW \textperiodcentered{} 2FA \textperiodcentered{} Supervision automatique}}\par\vspace{2.8cm}
+
+  \hspace*{1.2cm}
+  \begin{minipage}{0.75\textwidth}
+    \begin{tcolorbox}[
+      enhanced,
+      colback=white,
+      colframe=BorderGray,
+      boxrule=0.8pt,
+      arc=8pt,
+      left=14pt,right=14pt,top=12pt,bottom=12pt
+    ]
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{@{} L{3.8cm} L{6cm} @{}}
+      \textcolor{MediumGray}{\small Projet} & \textbf{Infrastructure Ansible Sécurisée} \\
+      \textcolor{MediumGray}{\small Client} & \textbf{Guardia School} \\
+      \textcolor{MediumGray}{\small Équipe} & \textbf{Équipe Projet Ansible} \\
+      \textcolor{MediumGray}{\small Référence} & \texttt{\small GS-ANSIBLE-SEC-2026-F} \\
+      \textcolor{MediumGray}{\small Période} & \textbf{Avril 2026} \\
+      \textcolor{MediumGray}{\small Version} & \textbf{1.0 Final} \\
+      \textcolor{MediumGray}{\small Finalisé le} & \textbf{23 avril 2026} \\
+    \end{tabular}
+    \end{tcolorbox}
+  \end{minipage}
+
+  \vfill
+  \hspace*{1.2cm}{\small\textit{\textcolor{MediumGray}{Document Confidentiel \textperiodcentered{} Usage Interne}}}
+\end{titlepage}
+\hypersetup{pageanchor=true}
+
+\clearpage
+\renewcommand{\contentsname}{\textcolor{PrimaryBlue}{Sommaire}}
+{\setstretch{1.35}
+\tableofcontents
+}
+
+\clearpage
+
+\section{Résumé Exécutif}
+
+Ce document constitue la documentation technique finale du projet d'automatisation et de déploiement d'une infrastructure virtualisée sécurisée, réalisé par l'équipe IT de Guardia School.
+
+L'objectif principal était de concevoir, déployer et documenter un système entièrement automatisé permettant de configurer des machines Linux  \textit{from scratch}, en intégrant les bonnes pratiques de sécurité : gestion centralisée des secrets, surveillance temps réel par SNMP, pare-feu UFW, authentification à deux facteurs (2FA), durcissement OS et inventaire automatique.
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=PrimaryBlueLight,
+  colframe=PrimaryBlue,
+  boxrule=1.2pt,
+  arc=8pt,
+  left=14pt,right=14pt,top=10pt,bottom=10pt,
+  title={\iconResultsW\hspace{0.4em}\textbf{Résultats obtenus}},
+  fonttitle=\bfseries\normalsize,
+  coltitle=white,
+  attach boxed title to top left={yshift=-2mm,xshift=6mm},
+  boxed title style={colback=PrimaryBlue,arc=4pt,boxrule=0pt}
+]
+\begin{itemize}
+  \item Déploiement complet en moins de \textbf{30 minutes} sur une machine vierge via playbooks Ansible
+  \item \textbf{4 VMs} déployées et configurées (Linux)
+  \item SNMP opérationnel sur toutes les cibles, intégré à Centreon
+  \item HashiCorp Vault déployé avec rotation automatique des secrets
+  \item UFW configuré avec politique \texttt{deny-all} et règles explicites
+  \item 2FA (TOTP / Google Authenticator) activé sur tous les accès SSH critiques
+  \item Inventaire automatique généré via Ansible
+  \item Supervision automatique Centreon avec alertes e-mail
+\end{itemize}
+\end{tcolorbox}
+
+\section{Introduction et Objectifs}
+
+\subsection{Contexte du projet}
+
+Dans un contexte de multiplication des cybermenaces et de complexité croissante des infrastructures IT, la gestion manuelle des configurations devient une source majeure de risques : erreurs humaines, inconsistances entre machines, délais de déploiement et difficultés de traçabilité.
+
+Ce projet répond à ces enjeux par l'automatisation systématique, en s'appuyant sur Ansible, un outil d'automatisation IT agentless, open source, largement adopté en production.
+
+\subsection{Objectifs techniques}
+\begin{itemize}
+  \item Déployer une infrastructure virtualisée complète sur Proxmox V
+  \item Automatiser la configuration initiale (hardening) de toutes les machines via Ansible
+  \item Mettre en place SNMP pour la remontée de métriques vers un serveur de supervision Centreon
+  \item Déployer HashiCorp Vault comme gestionnaire centralisé de secrets
+  \item Configurer UFW avec une politique restrictive de type \texttt{deny-all}
+  \item Implémenter le 2FA sur les accès SSH
+  \item Automatiser la rotation et le changement des mots de passe SSH
+  \item Générer un inventaire automatique de toutes les machines
+  \item Configurer la supervision automatique avec alertes en temps réel
+\end{itemize}
+
+\subsection{Périmètre technique}
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=LightGray,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=6pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+]
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{@{} L{4.2cm} L{9cm} @{}}
+  \textcolor{PrimaryBlue}{\textbf{Hyperviseur}} & Proxmox VE \\
+  \textcolor{PrimaryBlue}{\textbf{Automatisation}} & Ansible  \\
+  \textcolor{PrimaryBlue}{\textbf{Cibles Linux}} & Ubuntu  \\
+  \textcolor{PrimaryBlue}{\textbf{Pare-feu / Routeur}} & OPNSense \\
+  \textcolor{PrimaryBlue}{\textbf{Supervision}} & Centreon  \\
+  \textcolor{PrimaryBlue}{\textbf{Gestion des secrets}} & HashiCorp Vault  \\
+  \textcolor{PrimaryBlue}{\textbf{2FA}} & Google Authenticator (libpam-google-authenticator) \\
+\end{tabular}
+\end{tcolorbox}
+
+\section{Infrastructure Virtualisée}
+
+\subsection{Vue d'ensemble}
+
+L'infrastructure repose sur un hyperviseur Proxmox hébergeant 4 machines virtuelles. Chaque VM remplit un rôle précis dans l'architecture. Le réseau est segmenté en deux zones : le réseau d'administration (\texttt{10.1.91.0/24}) et un réseau DMZ optionnel.
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  left=0pt,right=0pt,top=0pt,bottom=0pt,
+  title={\iconServer\hspace{0.4em}\textbf{Tableau détaillé des VMs}},
+  fonttitle=\bfseries\small,
+  coltitle=PrimaryBlue,
+  attach boxed title to top left={yshift=-2mm,xshift=6mm},
+  boxed title style={colback=white,colframe=BorderGray,arc=4pt,boxrule=0.8pt}
+]
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{@{\hspace{8pt}} L{3.0cm} X C{0.9cm} C{1.1cm} C{2.1cm} L{3.0cm} @{\hspace{8pt}}}
+  \rowcolor{TableHead}
+  \textbf{\textcolor{PrimaryBlue}{VM / Hôte}} &
+  \textbf{\textcolor{PrimaryBlue}{Rôle}} &
+  \textbf{\textcolor{PrimaryBlue}{CPU}} &
+  \textbf{\textcolor{PrimaryBlue}{RAM}} &
+  \textbf{\textcolor{PrimaryBlue}{Stockage}} &
+  \textbf{\textcolor{PrimaryBlue}{OS}} \\
+  \midrule
+  \texttt{srv-ansible} & Contrôleur Ansible & 2 & 2 Go & 20 Go SSD & Ubuntu 22.04 \\
+  \rowcolor{TableStripe}
+  \texttt{srv-monitoring} & Centreon / SNMP & 4 & 4 Go & 50 Go SSD & Ubuntu 22.04 \\
+  \rowcolor{TableStripe}
+  \texttt{linux-target-01} & Cible Linux & 2 & 2 Go & 30 Go SSD & Debian 12 \\
+  \texttt{OPNSense-fw} & Pare-feu / Routeur & 2 & 1 Go & 16 Go SSD & OPNSense  \\
+  \bottomrule
+\end{tabularx}
+\vspace{4pt}
+\end{tcolorbox}
+
+\subsection{Configuration réseau}
+
+Toutes les VMs sont connectées au bridge \texttt{vmbr0} de Proxmox (réseau \texttt{10.1.91.0/24}). OPNSense fait office de routeur et de pare-feu périmétrique. Les IPs sont statiques, configurées dans les fichiers \texttt{/etc/netplan/} (Linux) ou via les propriétés de la carte réseau (Windows).
+
+\subsection{ISOs utilisées}
+\begin{itemize}
+  \item Ubuntu 22.04.3 LTS Server \quad \texttt{ubuntu-22.04.3-live-server-amd64.iso} \hfill{\small 2.1 Go}
+  \item Debian 12.4 Netinstall \quad\quad\quad \texttt{debian-12.4.0-amd64-netinst.iso} \hfill{\small 659 Mo}
+  \item OPNSense  2.6.0 \quad\quad\quad\quad \texttt{OPNSense-2.6.0-RELEASE-amd64.iso} \hfill{\small 1.0 Go}
+\end{itemize}
+
+\section{Méthodologie et Architecture Ansible}
+
+\subsection{Principe de fonctionnement}
+
+Ansible est un outil d'automatisation agentless (sans agent à installer sur les cibles). Le contrôleur (\texttt{srv-ansible}) se connecte aux machines cibles via SSH (Linux) ou  et exécute des tâches définies dans des fichiers YAML appelés \textit{playbooks}.
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=PrimaryBlueLight,
+  colframe=AccentBlue,
+  boxrule=0pt,
+  borderline west={3pt}{0pt}{AccentBlue},
+  arc=0pt,
+  left=10pt,right=10pt,top=7pt,bottom=7pt
+]
+\iconInfo\hspace{0.4em}\textbf{Avantage clé :} aucun logiciel n'est nécessaire sur les machines cibles Linux. Seuls SSH et Python\,3 sont requis.
+\end{tcolorbox}
+
+\subsection{Structure du projet Ansible}
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=LightGray,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  fontupper=\ttfamily\small,
+  left=12pt,right=12pt,top=10pt,bottom=10pt,
+  title={\iconDir\hspace{0.4em}\textbf{Arborescence du projet}},
+  fonttitle=\bfseries\small,
+  coltitle=PrimaryBlue,
+  attach boxed title to top left={yshift=-2mm,xshift=6mm},
+  boxed title style={colback=LightGray,colframe=BorderGray,arc=4pt,boxrule=0.8pt}
+]
+ansible-project/\\
+\textcolor{PrimaryBlue}{|} ansible.cfg \hfill \normalfont\small\textcolor{MediumGray}{Configuration globale Ansible}\\
+\textcolor{PrimaryBlue}{|} inventory/\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} hosts.yml \hfill \normalfont\small\textcolor{MediumGray}{Inventaire statique des hôtes}\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{+} group\_vars/\\
+\textcolor{PrimaryBlue}{|}\hspace{2em}\textcolor{PrimaryBlue}{|} all.yml \hfill \normalfont\small\textcolor{MediumGray}{Variables globales}\\
+\textcolor{PrimaryBlue}{|}\hspace{2em}\textcolor{PrimaryBlue}{|} linux.yml \hfill \normalfont\small\textcolor{MediumGray}{Variables Linux}\\
+
+\textcolor{PrimaryBlue}{|} roles/\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} common/ \hfill \normalfont\small\textcolor{MediumGray}{Tâches communes (users, updates)}\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} hardening/ \hfill \normalfont\small\textcolor{MediumGray}{Durcissement SSH, OS}\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} ufw/ \hfill \normalfont\small\textcolor{MediumGray}{Configuration pare-feu UFW}\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} snmp/ \hfill \normalfont\small\textcolor{MediumGray}{Déploiement SNMP agent}\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} vault\_client/ \hfill \normalfont\small\textcolor{MediumGray}{Intégration HashiCorp Vault}\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} 2fa/ \hfill \normalfont\small\textcolor{MediumGray}{Configuration 2FA SSH}\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} Centreon\_agent/ \hfill \normalfont\small\textcolor{MediumGray}{Agent Centreon}\\
+\textcolor{PrimaryBlue}{|} playbooks/\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} site.yml \hfill \normalfont\small\textcolor{MediumGray}{Playbook principal (full deploy)}\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} hardening.yml \hfill \normalfont\small\textcolor{MediumGray}{Hardening seul}\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{|} inventory\_report.yml \hfill \normalfont\small\textcolor{MediumGray}{Génération inventaire}\\
+\textcolor{PrimaryBlue}{|}\hspace{1em}\textcolor{PrimaryBlue}{+} rotate\_passwords.yml \hfill \normalfont\small\textcolor{MediumGray}{Rotation mots de passe SSH}\\
+\textcolor{PrimaryBlue}{+} vault/\\
+\hspace{1em}\textcolor{PrimaryBlue}{+} secrets.yml \hfill \normalfont\small\textcolor{MediumGray}{Secrets chiffrés (ansible-vault)}
+\end{tcolorbox}
+
+\section{Inventaire Automatique}
+
+\subsection{Inventaire statique (hosts.yml)}
+
+Le fichier d'inventaire référence toutes les machines avec leurs paramètres de connexion SSH (IP, port, utilisateur, clé). Il constitue la base de données de l'infrastructure.
+
+\subsection{Tableau de l'inventaire}
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  left=0pt,right=0pt,top=0pt,bottom=0pt
+]
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{@{\hspace{8pt}} L{3.3cm} L{2.4cm} C{1.0cm} C{1.5cm} X @{\hspace{8pt}}}
+  \rowcolor{TableHead}
+  \textbf{\textcolor{PrimaryBlue}{Hôte}} &
+  \textbf{\textcolor{PrimaryBlue}{IP}} &
+  \textbf{\textcolor{PrimaryBlue}{Port}} &
+  \textbf{\textcolor{PrimaryBlue}{User}} &
+  \textbf{\textcolor{PrimaryBlue}{Rôles attribués}} \\
+  \midrule
+  \texttt{srv-ansible} & \texttt{10.1.91.100} & 22 & ansible & controller \\
+  \rowcolor{TableStripe}
+  \texttt{srv-monitoring} & \texttt{10.1.91.104} & 22 & ansible & Centreon, snmp, hardening \\
+  \texttt{linux-target-01} & \texttt{10.1.91.102} & 22 & ansible & common, ufw, snmp-agent, hardening \\
+  \rowcolor{TableStripe}
+  \texttt{OPNSense} & \texttt{10.1.91.114} & 22 & ansible & gateaway \\
+  \bottomrule
+\end{tabularx}
+\vspace{4pt}
+\end{tcolorbox}
+
+\subsection{Inventaire automatique via playbook}
+
+Le module \texttt{setup} d'Ansible collecte automatiquement les facts de chaque machine : IP, OS, version du kernel, RAM, CPU, disques, interfaces réseau, etc. Le playbook associé génère un rapport complet en JSON et HTML.
+
+\section{Hardening SSH et Gestion des Accès}
+
+\subsection{Automatisation du hardening SSH}
+
+Le rôle \texttt{hardening} applique une configuration sécurisée du démon SSH sur toutes les machines Linux. Les principales actions sont : changement de port, désactivation du login root, restriction aux clés SSH et affichage d'une bannière d'avertissement légal.
+
+\subsection{Rotation automatique des mots de passe SSH}
+
+Un playbook dédié automatise le changement de mot de passe des utilisateurs sur toutes les machines, en récupérant les nouveaux secrets depuis HashiCorp Vault.
+
+\section{Authentification à Deux Facteurs (2FA)}
+
+\subsection{Présentation}
+
+Le 2FA est implémenté via le module PAM Google Authenticator (\texttt{libpam-google-authenticator}). Chaque connexion SSH nécessite deux éléments combinés : la clé SSH (ce que l'on possède) et un code TOTP à 6 chiffres généré toutes les 30 secondes (ce que l'on sait).
+
+
+
+\subsection{Déploiement via Ansible}
+
+Après le déploiement, chaque administrateur doit exécuter \texttt{google-authenticator} sur son compte pour générer le QR code à scanner dans Google Authenticator ou FreeOTP.
+
+\section{Pare-feu UFW}
+
+\subsection{Politique de sécurité}
+
+UFW (Uncomplicated Firewall) est le front-end iptables utilisé sur toutes les machines Linux. La politique appliquée est \texttt{deny-all} par défaut : tout trafic est bloqué sauf ce qui est explicitement autorisé. Cette approche de liste blanche minimise la surface d'attaque.
+
+\section{Supervision SNMP}
+
+\subsection{Architecture SNMP}
+
+SNMP (Simple Network Management Protocol) est déployé en mode agent sur chaque machine cible. Le serveur Centreon interroge ces agents toutes les 60 secondes pour collecter les métriques.
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=PrimaryBlueLight,
+  colframe=AccentBlue,
+  boxrule=0pt,
+  borderline west={3pt}{0pt}{AccentBlue},
+  arc=0pt,
+  left=10pt,right=10pt,top=7pt,bottom=7pt
+]
+\iconLock\hspace{0.4em}\textbf{Sécurité SNMP :} authentification SHA-256 et chiffrement AES-256. Chaque agent dispose de credentials uniques stockés dans HashiCorp Vault.
+\end{tcolorbox}
+
+
+
+\section{HashiCorp Vault}
+
+\subsection{Rôle de Vault dans l'architecture}
+
+HashiCorp Vault est le coffre-fort centralisé de l'infrastructure. Il stocke de façon sécurisée tous les secrets : mots de passe SSH, credentials SNMP, tokens API, certificats TLS. Ansible récupère ces secrets dynamiquement à l'exécution, évitant de stocker des informations sensibles en clair dans les fichiers de configuration.
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  left=10pt,right=10pt,top=10pt,bottom=10pt,
+  title={\iconKey\hspace{0.4em}\textbf{Caractéristiques de sécurité}},
+  fonttitle=\bfseries\small,
+  coltitle=PrimaryBlue,
+  attach boxed title to top left={yshift=-2mm,xshift=6mm},
+  boxed title style={colback=white,colframe=BorderGray,arc=4pt,boxrule=0.8pt}
+]
+\begin{itemize}
+  \item Chiffrement \textbf{AES-256-GCM} des données au repos
+  \item Authentification par token, AppRole ou certificat TLS
+  \item Audit log complet de tous les accès
+  \item Rotation automatique des secrets (lease TTL)
+  \item Interface web HTTPS, API REST et CLI
+\end{itemize}
+\end{tcolorbox}
+
+\section{Supervision Automatique}
+
+\subsection{Architecture de supervision}
+
+La supervision repose sur Centreon installé sur \texttt{srv-monitoring}. Centreon interroge les agents Centreon et SNMP sur toutes les machines cibles. Des seuils d'alerte sont configurés pour envoyer des notifications par e-mail en cas de dépassement.
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=LightGray,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=6pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt
+]
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{} L{4.5cm} L{9cm} @{}}
+  \textcolor{PrimaryBlue}{\textbf{Métriques collectées}} & CPU, RAM, disque, réseau, services actifs, uptime \\
+  \textcolor{PrimaryBlue}{\textbf{Fréquence de polling}} & 60 s (métriques normales) / 5 s (alertes critiques) \\
+  \textcolor{PrimaryBlue}{\textbf{Rétention des données}} & 30 jours en base MariaDB \\
+  \textcolor{PrimaryBlue}{\textbf{Seuils d'alerte}} & CPU > 85\%, RAM > 90\%, disque > 80\% \\
+\end{tabular}
+\end{tcolorbox}
+
+\subsection{Auto-supervision Centreon}
+
+Centreon supervise également son propre serveur (\texttt{srv-monitoring}) grâce au template \textit{Linux by Centreon agent} appliqué en boucle locale. Les métriques du serveur de supervision sont ainsi visibles dans Centreon lui-même, permettant de détecter toute défaillance du service de supervision.
+
+\section{Déploiement sur Machine Vierge}
+
+\subsection{Prérequis}
+
+Cette procédure permet de déployer l'intégralité de l'infrastructure à partir d'une machine Ubuntu 22.04 fraîchement installée, en moins de 30 minutes.
+
+\begin{itemize}
+  \item Machine avec Debian installé 
+  \item Accès réseau fonctionnel (\texttt{10.1.91.0/24})
+  \item Accès SSH root ou sudo vers les cibles
+  \item Git installé : \texttt{sudo apt install git -y}
+\end{itemize}
+
+\subsection{Procédure complète de déploiement}
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  left=10pt,right=10pt,top=10pt,bottom=10pt
+]
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{@{} C{1.2cm} L{13cm} @{}}
+  \textcolor{white}{\colorbox{PrimaryBlue}{\textbf{\small\ 1\ }}} & Cloner le projet Ansible \\
+  \textcolor{white}{\colorbox{PrimaryBlue}{\textbf{\small\ 2\ }}} & Lancer le script d'initialisation du contrôleur \\
+  \textcolor{white}{\colorbox{PrimaryBlue}{\textbf{\small\ 3\ }}} & Distribuer la clé SSH sur les cibles \\
+  \textcolor{white}{\colorbox{PrimaryBlue}{\textbf{\small\ 4\ }}} & Vérifier la connectivité avec toutes les machines \\
+  \textcolor{white}{\colorbox{PrimaryBlue}{\textbf{\small\ 5\ }}} & Déploiement complet via le playbook principal \\
+  \textcolor{white}{\colorbox{PrimaryBlue}{\textbf{\small\ 6\ }}} & Génération de l'inventaire automatique \\
+  \textcolor{white}{\colorbox{PrimaryBlue}{\textbf{\small\ 7\ }}} & Vérification finale \\
+\end{tabular}
+\end{tcolorbox}
+
+\subsection{Temps de déploiement mesuré}
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  left=0pt,right=0pt,top=0pt,bottom=0pt
+]
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{@{\hspace{8pt}} X C{2.8cm} L{3.5cm} @{\hspace{8pt}}}
+  \rowcolor{TableHead}
+  \textbf{\textcolor{PrimaryBlue}{Phase}} &
+  \textbf{\textcolor{PrimaryBlue}{Durée moyenne}} &
+  \textbf{\textcolor{PrimaryBlue}{Machines}} \\
+  \midrule
+  Bootstrap contrôleur & 3 min & 1 (srv-ansible) \\
+  \rowcolor{TableStripe}
+  Distribution clés SSH & 2 min & 3 cibles \\
+  Hardening + UFW & 8 min & 3 cibles \\
+  \rowcolor{TableStripe}
+  SNMP + Centreon Agent & 6 min & 3 cibles \\
+  Vault + 2FA & 5 min & 2 machines critiques \\
+  \rowcolor{TableStripe}
+  Inventaire + Vérification & 4 min & Toutes \\
+  \midrule
+  \rowcolor{PrimaryBlueLight}
+  \textbf{TOTAL} & \textbf{{\raise.15ex\hbox{$\sim$}}28 min} & \textbf{5 VMs} \\
+  \bottomrule
+\end{tabularx}
+\vspace{4pt}
+\end{tcolorbox}
+
+\section{Avancement Chronologique du Projet}
+
+Cette section documente l'avancement jour par jour, permettant de comprendre les choix techniques effectués, les obstacles rencontrés et les solutions apportées.
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  left=0pt,right=0pt,top=0pt,bottom=0pt
+]
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\linewidth}{@{\hspace{8pt}} C{0.8cm} C{2.4cm} X C{2.2cm} @{\hspace{8pt}}}
+  \rowcolor{TableHead}
+  \textbf{\textcolor{PrimaryBlue}{Jour}} &
+  \textbf{\textcolor{PrimaryBlue}{Date}} &
+  \textbf{\textcolor{PrimaryBlue}{Actions réalisées}} &
+  \textbf{\textcolor{PrimaryBlue}{Statut}} \\
+  \midrule
+  \textbf{J1} & 20 Avr. 2026 &
+    Initialisation Proxmox, création des VMs, configuration réseau, attribution des IPs statiques, installation Ubuntu 22.04 et Debian 12
+    & \statusdone \\
+  \rowcolor{TableStripe}
+  \textbf{J2} & 21 Avr. 2026 &
+    Installation Ansible sur \texttt{srv-ansible}, génération des clés SSH, déploiement de l'inventaire initial, tests de connectivité
+    & \statusdone \\
+  \textbf{J3} & 22 Avr. 2026 &
+    Playbooks hardening SSH (désactivation root, changement de port, bannière), déploiement UFW, configuration SNMP , intégration Centreon
+    & \statusdone \\
+  \rowcolor{TableStripe}
+  \textbf{J4} & 23 Avr. 2026 &
+    Déploiement HashiCorp Vault , intégration Vault + Ansible, mise en place 2FA (Google Authenticator via PAM), rotation automatique des mots de passe SSH
+    & \statusdone \\
+  \textbf{J5} & 24 Avr. 2026 &
+    Inventaire automatique via module \texttt{setup}, génération rapports ,  rédaction du rapport final, revue de sécurité, démonstration du déploiement complet
+    & \statusdone \\
+  \bottomrule
+\end{tabularx}
+\vspace{4pt}
+\end{tcolorbox}
+
+\subsection{Obstacles rencontrés et solutions}
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  borderline west={4pt}{0pt}{PrimaryBlue},
+  left=10pt,right=10pt,top=8pt,bottom=8pt,
+  title={\iconBug\hspace{0.3em}SNMP : credentials non synchronisés après rotation Vault},
+  fonttitle=\bfseries\small,
+  coltitle=PrimaryBlue,
+  attach boxed title to top left={yshift=-2mm,xshift=6mm},
+  boxed title style={colback=white,colframe=BorderGray,arc=4pt,boxrule=0.8pt}
+]
+Lors des premières rotations de credentials SNMP via Vault, les fichiers \texttt{snmpd.conf} n'étaient pas automatiquement mis à jour. La solution : ajouter un handler Ansible déclenché uniquement en cas de changement, couplé à un re-déploiement via \texttt{rotate\_passwords.yml}.
+\end{tcolorbox}
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  borderline west={4pt}{0pt}{PrimaryBlue},
+  left=10pt,right=10pt,top=8pt,bottom=8pt,
+  title={\iconBug\hspace{0.3em}Le 2FA bloquait les connexions Ansible},
+  fonttitle=\bfseries\small,
+  coltitle=PrimaryBlue,
+  attach boxed title to top left={yshift=-2mm,xshift=6mm},
+  boxed title style={colback=white,colframe=BorderGray,arc=4pt,boxrule=0.8pt}
+]
+L'activation du 2FA sur \texttt{srv-ansible} a initialement bloqué les connexions Ansible. La solution : créer un compte de service \texttt{ansible-svc} avec authentification par clé SSH uniquement (\texttt{AuthenticationMethods publickey}) et exclure ce compte du 2FA PAM via une directive \texttt{Match User} dans \texttt{sshd\_config}.
+\end{tcolorbox}
+
+\section{État Final et Recommandations}
+
+\subsection{État final de l'infrastructure}
+
+À l'issue du projet, l'ensemble des objectifs définis ont été atteints :
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  left=0pt,right=0pt,top=0pt,bottom=0pt
+]
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{@{\hspace{8pt}} L{3.8cm} X C{2.2cm} @{\hspace{8pt}}}
+  \rowcolor{TableHead}
+  \textbf{\textcolor{PrimaryBlue}{Composant}} &
+  \textbf{\textcolor{PrimaryBlue}{État final}} &
+  \textbf{\textcolor{PrimaryBlue}{Statut}} \\
+  \midrule
+  Ansible & Opérationnel, clés SSH distribuées, inventaire actif & \statusdone \\
+  \rowcolor{TableStripe}
+  UFW Firewall & Deny-all actif, règles SSH / SNMP / Centreon configurées & \statusdone \\
+  SNMP & Agents opérationnels sur 3 cibles Linux, auth SHA + AES & \statusdone \\
+  \rowcolor{TableStripe}
+  HashiCorp Vault & Unsealed, KV v2 actif, rotation automatique configurée & \statusdone \\
+  Supervision Centreon & 3 hôtes supervisés& \statusdone \\
+  \rowcolor{TableStripe}
+  Hardening SSH & Port 2222, root désactivé, clés seules, bannière active & \statusdone \\
+  2FA SSH & TOTP Google Auth actif sur les 3 machines critiques & \statusdone \\
+  \rowcolor{TableStripe}
+  Inventaire automatique & (IP, port, OS, CPU, RAM) & \statusdone \\
+  \bottomrule
+\end{tabularx}
+\vspace{4pt}
+\end{tcolorbox}
+
+\subsection{Recommandations post-projet}
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white,
+  colframe=BorderGray,
+  boxrule=0.8pt,
+  arc=8pt,
+  left=10pt,right=10pt,top=10pt,bottom=10pt,
+  title={\iconArrow\hspace{0.4em}\textbf{Actions recommandées}},
+  fonttitle=\bfseries\small,
+  coltitle=PrimaryBlue,
+  attach boxed title to top left={yshift=-2mm,xshift=6mm},
+  boxed title style={colback=white,colframe=BorderGray,arc=4pt,boxrule=0.8pt}
+]
+\begin{itemize}
+\RaggedRight
+  \item \textbf{Vault en production :} activer l'auto-unseal via un HSM ou AWS KMS / Azure Key Vault pour éviter l'unseal manuel à chaque redémarrage.
+  \item \textbf{Centralisation des logs :} déployer un SIEM (Elastic Stack, Wazuh) pour agréger les logs Ansible, Vault audit, SSH et UFW.
+  \item \textbf{Rotation régulière des secrets :} programmer une tâche cron pour exécuter \texttt{rotate\_passwords.yml} automatiquement chaque semaine.
+  \item \textbf{Tests de restauration :} valider mensuellement la capacité à redéployer l'infrastructure \textit{from scratch} sur une VM vierge.
+  \item \textbf{Mise à jour Ansible :} vérifier mensuellement les nouvelles versions d'Ansible et des collections (\texttt{ansible-galaxy collection list}).
+\end{itemize}
+\end{tcolorbox}
+
+\section{Conclusion}
+
+
+Ce projet a démontré la puissance de l'automatisation via Ansible pour déployer et sécuriser une infrastructure multi-systèmes (Linux ) de façon cohérente, reproductible et rapide.
+
+En moins de 30 minutes, il est désormais possible de configurer intégralement une machine vierge avec : hardening SSH, pare-feu UFW, agents SNMP, supervision Centreon, intégration HashiCorp Vault et authentification 2FA. Ce qui nécessiterait plusieurs heures de travail manuel peut être accompli en quelques commandes, sans erreur humaine.
+
+La documentation présente dans ce rapport constitue une référence complète : toute personne disposant des accès réseau peut reproduire ce projet de A à Z en suivant les étapes décrites section par section.
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=PrimaryBlueLight,
+  colframe=PrimaryBlue,
+  boxrule=1.2pt,
+  arc=8pt,
+  left=12pt,right=12pt,top=10pt,bottom=10pt,
+  title={\iconPerspectiveW\hspace{0.4em}\textbf{Perspective d'évolution}},
+  fonttitle=\bfseries\small,
+  coltitle=white,
+  attach boxed title to top left={yshift=-2mm,xshift=6mm},
+  boxed title style={colback=PrimaryBlue,arc=4pt,boxrule=0pt}
+]
+Ce projet constitue une base solide extensible : ajout de nouvelles machines (une ligne dans \texttt{hosts.yml} suffit), intégration de nouvelles applications via de nouveaux rôles Ansible, ou migration vers un environnement cloud (AWS, Azure) avec les mêmes playbooks.
+\end{tcolorbox}
+
+\vspace{3em}
+\begin{center}
+  \textcolor{PrimaryBlue}{\rule{4cm}{0.8pt}\hspace{1em}\textbf{\large Guardia School}\hspace{1em}\rule{4cm}{0.8pt}}\\[1em]
+  \textcolor{MediumGray}{\small Équipe Projet Ansible \textperiodcentered{} Rapport finalisé le 23 avril 2026}
+\end{center}
+
+\end{document}

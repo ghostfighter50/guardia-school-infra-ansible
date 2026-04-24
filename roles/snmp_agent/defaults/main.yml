@@ -1,0 +1,5 @@
+---
+snmp_community: "public_ro"
+snmp_location: "Lab"
+snmp_contact: "admin@example.local"
+snmp_allowed_source: "127.0.0.1"
