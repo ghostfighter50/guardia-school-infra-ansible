@@ -6,7 +6,7 @@ ansible_service_user: admin-isr
 ansible_service_user_home: /home/admin-isr/ansible_projet
 
 # Human admin account (password + 2FA TOTP)
-admin_user: admin
+admin_user: admin-isr
 
 # SSH hardening
 ssh_port: 2222

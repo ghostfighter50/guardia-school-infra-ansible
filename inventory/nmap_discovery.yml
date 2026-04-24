@@ -6,9 +6,9 @@
 # Scans the subnet and groups hosts based on open ports.
 
 plugin: community.general.nmap
-address: 10.1.90.0/24
+address: 10.1.91.0/24
 exclude:
-  - 10.1.90.1     # opnsense (gateway/firewall, not a Linux target)
+  - 10.1.91.100-200
 strict: false
 ports: true
 ipv4: true
@@ -21,7 +21,7 @@ sudo: true
 # Automatic groups by detected open ports.
 # A host with SSH open is considered a linux_targets candidate.
 groups:
-  discovered_ssh: "ports is defined and ports | selectattr('port', 'equalto', '22') | list | length > 0"
+  discovered_ssh: "ports is defined and ports | selectattr('port', 'in', ['22','2222']) | list | length > 0"
   discovered_web: "ports is defined and ports | selectattr('port', 'in', ['80','443']) | list | length > 0"
   discovered_snmp: "ports is defined and ports | selectattr('port', 'equalto', '161') | list | length > 0"
 
