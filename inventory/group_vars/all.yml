@@ -4,6 +4,7 @@
 # Service account used by Ansible (SSH key only, exempt from 2FA)
 ansible_service_user: admin-isr
 ansible_service_user_home: /home/admin-isr/ansible_projet
+ansible_user: "{{ ansible_service_user }}"
 
 # Human admin account (password + 2FA TOTP)
 admin_user: admin-isr
